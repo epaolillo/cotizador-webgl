@@ -1,0 +1,81 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+// Translation resources
+const resources = {
+  es: {
+    translation: {
+      "app": {
+        "title": "Editor de Bloques 3D",
+        "description": "Haz clic para colocar bloques en la grilla"
+      },
+      "controls": {
+        "instructions": "Instrucciones",
+        "firstClick": "Primer clic: define la base del bloque",
+        "secondClick": "Segundo clic: confirma la inserción",
+        "samePoint": "Mismo punto: bloque unitario",
+        "rotate": "Arrastra para rotar la cámara",
+        "zoom": "Rueda del mouse para zoom"
+      },
+      "blocks": {
+        "count": "Bloques: {{count}}",
+        "clear": "Limpiar Todo",
+        "clearConfirm": "¿Estás seguro de que quieres eliminar todos los bloques?"
+      },
+      "tools": {
+        "block": "Bloque",
+        "move": "Mover",
+        "blockMode": "Modo Bloque - Coloca bloques en la grilla",
+        "moveMode": "Modo Mover - Arrastra para mover el espacio 3D"
+      }
+    }
+  },
+  en: {
+    translation: {
+      "app": {
+        "title": "3D Block Editor",
+        "description": "Click to place blocks on the grid"
+      },
+      "controls": {
+        "instructions": "Instructions",
+        "firstClick": "First click: define block base",
+        "secondClick": "Second click: confirm insertion",
+        "samePoint": "Same point: unit block",
+        "rotate": "Drag to rotate camera",
+        "zoom": "Mouse wheel to zoom"
+      },
+      "blocks": {
+        "count": "Blocks: {{count}}",
+        "clear": "Clear All",
+        "clearConfirm": "Are you sure you want to remove all blocks?"
+      },
+      "tools": {
+        "block": "Block",
+        "move": "Move",
+        "blockMode": "Block Mode - Place blocks on the grid",
+        "moveMode": "Move Mode - Drag to move the 3D space"
+      }
+    }
+  }
+};
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'es',
+    debug: false,
+    
+    interpolation: {
+      escapeValue: false, // not needed for react as it escapes by default
+    },
+
+    detection: {
+      order: ['localStorage', 'navigator', 'htmlTag'],
+      caches: ['localStorage']
+    }
+  });
+
+export default i18n;
