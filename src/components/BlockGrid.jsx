@@ -1,9 +1,10 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { Plane } from '@react-three/drei';
+import { Plane, Box } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
 import GrassGround from './GrassGround';
+import brickTexture from '../assets/uneven-brick-wall-light-colors.jpg';
 
 // Grid configuration
 const GRID_SIZE = 20; // Grid extends from -GRID_SIZE to +GRID_SIZE
@@ -133,6 +134,17 @@ const BlockGrid = () => {
   
   const { camera, raycaster } = useThree();
   
+  // Load brick texture for walls
+  const brickTex = useLoader(THREE.TextureLoader, brickTexture);
+  
+  // Configure brick texture
+  useMemo(() => {
+    if (brickTex) {
+      brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
+      brickTex.repeat.set(4, 2); // Adjust repetition for good brick appearance
+    }
+  }, [brickTex]);
+  
   // Convert world position to grid position (discrete/snap to grid)
   const worldToGrid = useMemo(() => {
     return (worldPos) => {
@@ -236,6 +248,47 @@ const BlockGrid = () => {
           onPointerDown={handlePointerDown}
         />
       </group>
+
+      {/* Walls around the grid - using thin boxes for better visibility */}
+
+      <Box
+        args={[0.1, 3, GRID_SIZE]}
+        position={[0.5, 1, (GRID_SIZE / 2) + 0.5]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial map={brickTex} />
+      </Box>
+
+
+      <Box
+        args={[0.1, 3, GRID_SIZE]}
+        position={[ (GRID_SIZE ) + 0.5, 1, (GRID_SIZE / 2) + 0.5]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial map={brickTex} />
+      </Box>
+
+
+      <Box
+        args={[GRID_SIZE, 3, 0.1]}
+        position={[ (GRID_SIZE / 2) + 0.5, 1, 0.5]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial map={brickTex} />
+      </Box>
+
+      <Box
+        args={[GRID_SIZE, 3, 0.1]}
+        position={[ (GRID_SIZE / 2) + 0.5, 1, (GRID_SIZE ) + 0.5]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial map={brickTex} />
+      </Box>
+
       
         {/* Grid lines for visual reference (subtle) */}
         { /* 
