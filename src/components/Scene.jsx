@@ -8,6 +8,7 @@ import CursorPreview from './CursorPreview';
 import BlockGrid from './BlockGrid';
 import Skybox from './Skybox';
 import InfiniteGround from './InfiniteGround';
+import AtmosphericFog from './AtmosphericFog';
 import { Box } from '@react-three/drei';
 
 // Loading fallback component
@@ -68,7 +69,7 @@ const Lighting = () => {
 
 // Scene content component
 const SceneContent = () => {
-  const { blocks, toolMode, TOOL_MODES } = useEditor();
+  const { blocks, toolMode, TOOL_MODES, fogSettings } = useEditor();
 
   return (
     <>
@@ -87,7 +88,7 @@ const SceneContent = () => {
         enableZoom={true}
         enableRotate={true}
         minDistance={5}
-        maxDistance={100}
+        maxDistance={150} // Increased for better fog effect visibility
         minPolarAngle={0}
         target={[0, 0, 0]}
         panSpeed={toolMode === TOOL_MODES.MOVE ? 2.0 : 0.8}
@@ -95,6 +96,9 @@ const SceneContent = () => {
         zoomSpeed={toolMode === TOOL_MODES.MOVE ? 1.5 : 1.0}
         makeDefault
       />
+
+      {/* Atmospheric Fog System */}
+      <AtmosphericFog />
 
       {/* Lighting */}
       <Lighting />
@@ -133,6 +137,11 @@ const SceneContent = () => {
 
 // Main Scene component
 const Scene = () => {
+  const { fogSettings } = useEditor();
+  
+  // Dynamic background color based on fog settings
+  const backgroundColor = fogSettings.enabled ? fogSettings.color : '#87CEEB';
+  
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Suspense fallback={<LoadingFallback />}>
@@ -140,7 +149,7 @@ const Scene = () => {
           shadows
           camera={{ position: [15, 12, 15], fov: 60 }}
           style={{ 
-            background: 'linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%)' // Gradient background for smooth transition
+            background: `linear-gradient(to bottom, ${backgroundColor} 0%, ${backgroundColor}CC 50%, ${backgroundColor}AA 100%)`
           }}
           gl={{
             antialias: true,
@@ -148,7 +157,7 @@ const Scene = () => {
             preserveDrawingBuffer: true
           }}
           dpr={[1, 2]} // Device pixel ratio for better quality on high-DPI screens
-          fog={new THREE.FogExp2(0x87CEEB, 0.02)} // Exponential fog for more natural effect
+          // Fog is now handled by AtmosphericFog component for better control
         >
           <SceneContent />
         </Canvas>

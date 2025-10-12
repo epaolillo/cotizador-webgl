@@ -13,6 +13,7 @@ const BlockUnit = ({ position, color = '#4a90e2', opacity = 1.0 }) => {
         opacity={opacity}
         transparent={opacity < 1.0}
         wireframe={false}
+        fog={true} // Enable fog response for better depth perception
       />
     </Box>
   );
@@ -58,6 +59,7 @@ const Block = ({
                 wireframe={false}
                 opacity={0.3}
                 transparent={true}
+                fog={true} // Enable fog response for outlines
               />
             </Box>
           ))}

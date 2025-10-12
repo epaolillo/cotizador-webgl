@@ -8,7 +8,8 @@ const ACTIONS = {
   CLEAR_BLOCKS: 'CLEAR_BLOCKS',
   SET_INTERACTION_MODE: 'SET_INTERACTION_MODE',
   CLEAR_INTERACTION: 'CLEAR_INTERACTION',
-  SET_TOOL_MODE: 'SET_TOOL_MODE'
+  SET_TOOL_MODE: 'SET_TOOL_MODE',
+  UPDATE_FOG_SETTINGS: 'UPDATE_FOG_SETTINGS'
 };
 
 // Interaction modes
@@ -31,7 +32,15 @@ const initialState = {
   firstClickPosition: null,
   interactionMode: INTERACTION_MODES.NONE,
   selectedBlockId: null,
-  toolMode: TOOL_MODES.BLOCK
+  toolMode: TOOL_MODES.BLOCK,
+  fogSettings: {
+    enabled: true,
+    color: '#ffffff', // White fog color
+    density: 0.02,
+    near: 20,
+    far: 80,
+    affectSkybox: true // Always affect the skybox
+  }
 };
 
 // Utility functions for grid operations
@@ -145,6 +154,15 @@ const editorReducer = (state, action) => {
         previewPosition: null
       };
 
+    case ACTIONS.UPDATE_FOG_SETTINGS:
+      return {
+        ...state,
+        fogSettings: {
+          ...state.fogSettings,
+          ...action.payload
+        }
+      };
+
     default:
       return state;
   }
@@ -190,6 +208,10 @@ export const EditorProvider = ({ children }) => {
     dispatch({ type: ACTIONS.SET_TOOL_MODE, payload: mode });
   }, []);
 
+  const updateFogSettings = useCallback((settings) => {
+    dispatch({ type: ACTIONS.UPDATE_FOG_SETTINGS, payload: settings });
+  }, []);
+
   // Helper functions
   const isPositionOccupiedByBlocks = useCallback((position) => {
     return isPositionOccupied(position, state.blocks);
@@ -215,6 +237,7 @@ export const EditorProvider = ({ children }) => {
     clearBlocks,
     clearInteraction,
     setToolMode,
+    updateFogSettings,
     
     // Helpers
     isPositionOccupiedByBlocks,

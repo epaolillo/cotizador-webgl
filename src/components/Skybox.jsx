@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useEditor } from '../context/EditorContext';
 import cloudTexture from '../assets/fluffy-white-clouds-blue-sky.jpg';
 
 const Skybox = () => {
+  const { fogSettings } = useEditor();
   // Load the cloud texture
   const cloudTex = useLoader(THREE.TextureLoader, cloudTexture);
   
@@ -31,9 +33,10 @@ const Skybox = () => {
       map: skyboxTexture,
       side: THREE.BackSide, // Render inside of sphere
       transparent: true,
-      opacity: 1 // Slightly transparent to blend with gradient
+      opacity: 1,
+      fog: fogSettings.affectSkybox // Configurable fog effect on skybox
     });
-  }, [skyboxTexture]);
+  }, [skyboxTexture, fogSettings.affectSkybox]);
 
   if (!skyboxMaterial) {
     return null;
