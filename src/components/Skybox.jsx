@@ -14,14 +14,14 @@ const Skybox = () => {
     // Configure texture properties for skybox
     cloudTex.wrapS = cloudTex.wrapT = THREE.RepeatWrapping;
     cloudTex.repeat.set(1, 1); // No repeat for skybox
-    cloudTex.anisotropy = 16; // Better texture quality
+    cloudTex.anisotropy = 32; // Better texture quality
     
     return cloudTex;
   }, [cloudTex]);
 
   // Create skybox geometry and material
   const skyboxGeometry = useMemo(() => {
-    return new THREE.SphereGeometry(1000, 32, 32);
+    return new THREE.SphereGeometry(100, 100, 100);
   }, []);
 
   const skyboxMaterial = useMemo(() => {
@@ -30,9 +30,8 @@ const Skybox = () => {
     return new THREE.MeshBasicMaterial({
       map: skyboxTexture,
       side: THREE.BackSide, // Render inside of sphere
-      fog: true, // Enable fog for skybox to blend with environment
       transparent: true,
-      opacity: 0.8 // Slightly transparent to blend with gradient
+      opacity: 1 // Slightly transparent to blend with gradient
     });
   }, [skyboxTexture]);
 

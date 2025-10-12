@@ -13,7 +13,7 @@ const InfiniteGround = () => {
     
     // Configure texture properties for seamless tiling
     grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-    grassTex.repeat.set(100, 100); // Much smaller repeat for realistic grass scale
+    grassTex.repeat.set(400, 400); // Much smaller repeat for realistic grass scale
     grassTex.anisotropy = 16; // Better texture quality
     
     return grassTex;
