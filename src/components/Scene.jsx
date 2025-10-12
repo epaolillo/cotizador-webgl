@@ -10,6 +10,7 @@ import Skybox from './Skybox';
 import InfiniteGround from './InfiniteGround';
 import AtmosphericFog from './AtmosphericFog';
 import CameraTracker from './CameraTracker';
+import CameraAnimator from './CameraAnimator';
 import { Box } from '@react-three/drei';
 
 // Loading fallback component
@@ -70,7 +71,7 @@ const Lighting = () => {
 
 // Scene content component
 const SceneContent = () => {
-  const { blocks, toolMode, TOOL_MODES, fogSettings, cameraData } = useEditor();
+  const { blocks, fogSettings, cameraData, cameraView } = useEditor();
 
   // Initial camera configuration from context
   const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
@@ -87,18 +88,18 @@ const SceneContent = () => {
         far={1000}
       />
 
-      {/* Camera controls */}
+      {/* Camera controls - disabled during animation */}
       <OrbitControls
-        enablePan={toolMode === TOOL_MODES.MOVE}
-        enableZoom={true}
-        enableRotate={true}
+        enablePan={!cameraView.isAnimating}
+        enableZoom={!cameraView.isAnimating}
+        enableRotate={!cameraView.isAnimating}
         minDistance={5}
-        maxDistance={150} // Increased for better fog effect visibility
+        maxDistance={150}
         minPolarAngle={0}
         target={initialCameraTarget}
-        panSpeed={toolMode === TOOL_MODES.MOVE ? 2.0 : 0.8}
-        rotateSpeed={toolMode === TOOL_MODES.MOVE ? 1.5 : 0.8}
-        zoomSpeed={toolMode === TOOL_MODES.MOVE ? 1.5 : 1.0}
+        panSpeed={0.8}
+        rotateSpeed={0.8}
+        zoomSpeed={1.0}
         makeDefault
       />
 
@@ -134,6 +135,9 @@ const SceneContent = () => {
 
       {/* Camera data tracker (invisible) */}
       <CameraTracker />
+      
+      {/* Camera animation handler (invisible) */}
+      <CameraAnimator />
 
       {/* <Pasto /> */}
 

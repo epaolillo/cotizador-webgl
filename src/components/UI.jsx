@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
-import ToolPanel from './ToolPanel';
+import ViewPanel from './ViewPanel';
 import CameraInfo from './CameraInfo';
 
 const UI = () => {
@@ -11,8 +11,6 @@ const UI = () => {
     clearBlocks, 
     interactionMode, 
     INTERACTION_MODES,
-    toolMode,
-    TOOL_MODES,
     clearInteraction,
     debugUI
   } = useEditor();
@@ -35,17 +33,13 @@ const UI = () => {
   };
 
   const getInteractionModeText = () => {
-    if (toolMode === TOOL_MODES.MOVE) {
-      return t('tools.moveMode');
-    }
-    
     switch (interactionMode) {
       case INTERACTION_MODES.PLACING_FIRST:
         return t('controls.firstClick');
       case INTERACTION_MODES.PLACING_SECOND:
         return t('controls.secondClick');
       default:
-        return t('tools.blockMode');
+        return t('controls.ready');
     }
   };
 
@@ -249,8 +243,8 @@ const UI = () => {
         )}
       </div>
 
-      {/* Tool Panel - bottom right */}
-      <ToolPanel />
+      {/* View Panel - bottom right */}
+      <ViewPanel />
       
       {/* Camera Information Panel - bottom center (debug only) */}
       {debugUI.showCameraInfo && <CameraInfo />}

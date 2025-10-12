@@ -16,18 +16,19 @@ const resources = {
         "secondClick": "Segundo clic: confirma la inserción",
         "samePoint": "Mismo punto: bloque unitario",
         "rotate": "Arrastra para rotar la cámara",
-        "zoom": "Rueda del mouse para zoom"
+        "zoom": "Rueda del mouse para zoom",
+        "ready": "Listo para colocar bloques"
       },
       "blocks": {
         "count": "Bloques: {{count}}",
         "clear": "Limpiar Todo",
         "clearConfirm": "¿Estás seguro de que quieres eliminar todos los bloques?"
       },
-      "tools": {
-        "block": "Bloque",
-        "move": "Mover",
-        "blockMode": "Modo Bloque - Coloca bloques en la grilla",
-        "moveMode": "Modo Mover - Arrastra para mover el espacio 3D"
+      "views": {
+        "title": "Vistas",
+        "left": "Izquierda",
+        "center": "Centro",
+        "right": "Derecha"
       },
       "camera": {
         "info": "Información de Cámara",
@@ -54,18 +55,19 @@ const resources = {
         "secondClick": "Second click: confirm insertion",
         "samePoint": "Same point: unit block",
         "rotate": "Drag to rotate camera",
-        "zoom": "Mouse wheel to zoom"
+        "zoom": "Mouse wheel to zoom",
+        "ready": "Ready to place blocks"
       },
       "blocks": {
         "count": "Blocks: {{count}}",
         "clear": "Clear All",
         "clearConfirm": "Are you sure you want to remove all blocks?"
       },
-      "tools": {
-        "block": "Block",
-        "move": "Move",
-        "blockMode": "Block Mode - Place blocks on the grid",
-        "moveMode": "Move Mode - Drag to move the 3D space"
+      "views": {
+        "title": "Views",
+        "left": "Left",
+        "center": "Center",
+        "right": "Right"
       },
       "camera": {
         "info": "Camera Information",

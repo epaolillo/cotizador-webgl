@@ -11,7 +11,9 @@ const ACTIONS = {
   SET_TOOL_MODE: 'SET_TOOL_MODE',
   UPDATE_FOG_SETTINGS: 'UPDATE_FOG_SETTINGS',
   UPDATE_CAMERA_DATA: 'UPDATE_CAMERA_DATA',
-  TOGGLE_DEBUG_UI: 'TOGGLE_DEBUG_UI'
+  TOGGLE_DEBUG_UI: 'TOGGLE_DEBUG_UI',
+  ANIMATE_TO_VIEW: 'ANIMATE_TO_VIEW',
+  SET_CURRENT_VIEW: 'SET_CURRENT_VIEW'
 };
 
 // Interaction modes
@@ -23,8 +25,26 @@ export const INTERACTION_MODES = {
 
 // Tool modes
 export const TOOL_MODES = {
-  BLOCK: 'block',
-  MOVE: 'move'
+  BLOCK: 'block'
+};
+
+// Camera views
+export const CAMERA_VIEWS = {
+  CENTER: {
+    name: 'center',
+    position: { x: 22.44, y: 6.49, z: 11.62 },
+    target: { x: 3.56, y: -2.45, z: 11.07 }
+  },
+  LEFT: {
+    name: 'left',
+    position: { x: 9.49, y: 6.87, z: 22.86 },
+    target: { x: 9.92, y: -0.88, z: 9.60 }
+  },
+  RIGHT: {
+    name: 'right',
+    position: { x: 11.04, y: 7.99, z: -1.56 },
+    target: { x: 11.18, y: -0.65, z: 9.74 }
+  }
 };
 
 // Initial state
@@ -44,13 +64,18 @@ const initialState = {
     affectSkybox: true // Always affect the skybox
   },
   cameraData: {
-    position: { x: 22.44, y: 6.49, z: 11.62 }, // Initial camera position
-    target: { x: 3.56, y: -2.45, z: 11.07 }, // Initial camera target
+    position: CAMERA_VIEWS.CENTER.position, // Initial camera position
+    target: CAMERA_VIEWS.CENTER.target, // Initial camera target
     distance: 0,
     fov: 60
   },
   debugUI: {
     showCameraInfo: false // Debug UI hidden by default
+  },
+  cameraView: {
+    current: 'center',
+    isAnimating: false,
+    targetView: null
   }
 };
 
@@ -192,6 +217,26 @@ const editorReducer = (state, action) => {
         }
       };
 
+    case ACTIONS.ANIMATE_TO_VIEW:
+      return {
+        ...state,
+        cameraView: {
+          current: state.cameraView.current,
+          isAnimating: true,
+          targetView: action.payload
+        }
+      };
+
+    case ACTIONS.SET_CURRENT_VIEW:
+      return {
+        ...state,
+        cameraView: {
+          current: action.payload,
+          isAnimating: false,
+          targetView: null
+        }
+      };
+
     default:
       return state;
   }
@@ -249,6 +294,15 @@ export const EditorProvider = ({ children }) => {
     dispatch({ type: ACTIONS.TOGGLE_DEBUG_UI });
   }, []);
 
+  const animateToView = useCallback((viewName) => {
+    console.log(`📹 Camera View: ${viewName.toUpperCase()}`);
+    dispatch({ type: ACTIONS.ANIMATE_TO_VIEW, payload: viewName });
+  }, []);
+
+  const setCurrentView = useCallback((viewName) => {
+    dispatch({ type: ACTIONS.SET_CURRENT_VIEW, payload: viewName });
+  }, []);
+
   // Helper functions
   const isPositionOccupiedByBlocks = useCallback((position) => {
     return isPositionOccupied(position, state.blocks);
@@ -277,6 +331,8 @@ export const EditorProvider = ({ children }) => {
     updateFogSettings,
     updateCameraData,
     toggleDebugUI,
+    animateToView,
+    setCurrentView,
     
     // Helpers
     isPositionOccupiedByBlocks,
@@ -284,7 +340,8 @@ export const EditorProvider = ({ children }) => {
     
     // Constants
     INTERACTION_MODES,
-    TOOL_MODES
+    TOOL_MODES,
+    CAMERA_VIEWS
   };
 
   return (
