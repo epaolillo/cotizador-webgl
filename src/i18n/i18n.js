@@ -28,6 +28,17 @@ const resources = {
         "move": "Mover",
         "blockMode": "Modo Bloque - Coloca bloques en la grilla",
         "moveMode": "Modo Mover - Arrastra para mover el espacio 3D"
+      },
+      "camera": {
+        "info": "Información de Cámara",
+        "position": "Posición",
+        "target": "Objetivo",
+        "distance": "Distancia",
+        "fov": "Campo Visual",
+        "zoom": "Zoom",
+        "height": "Altura",
+        "metrics": "Métricas",
+        "additional": "Adicional"
       }
     }
   },
@@ -55,6 +66,17 @@ const resources = {
         "move": "Move",
         "blockMode": "Block Mode - Place blocks on the grid",
         "moveMode": "Move Mode - Drag to move the 3D space"
+      },
+      "camera": {
+        "info": "Camera Information",
+        "position": "Position",
+        "target": "Target",
+        "distance": "Distance",
+        "fov": "Field of View",
+        "zoom": "Zoom",
+        "height": "Height",
+        "metrics": "Metrics",
+        "additional": "Additional"
       }
     }
   }

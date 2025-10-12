@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
 import ToolPanel from './ToolPanel';
+import CameraInfo from './CameraInfo';
 
 const UI = () => {
   const { t, i18n } = useTranslation();
@@ -12,7 +13,8 @@ const UI = () => {
     INTERACTION_MODES,
     toolMode,
     TOOL_MODES,
-    clearInteraction 
+    clearInteraction,
+    debugUI
   } = useEditor();
   
   const [showInstructions, setShowInstructions] = useState(true);
@@ -249,6 +251,9 @@ const UI = () => {
 
       {/* Tool Panel - bottom right */}
       <ToolPanel />
+      
+      {/* Camera Information Panel - bottom center (debug only) */}
+      {debugUI.showCameraInfo && <CameraInfo />}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import BlockGrid from './BlockGrid';
 import Skybox from './Skybox';
 import InfiniteGround from './InfiniteGround';
 import AtmosphericFog from './AtmosphericFog';
+import CameraTracker from './CameraTracker';
 import { Box } from '@react-three/drei';
 
 // Loading fallback component
@@ -69,14 +70,18 @@ const Lighting = () => {
 
 // Scene content component
 const SceneContent = () => {
-  const { blocks, toolMode, TOOL_MODES, fogSettings } = useEditor();
+  const { blocks, toolMode, TOOL_MODES, fogSettings, cameraData } = useEditor();
+
+  // Initial camera configuration from context
+  const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
+  const initialCameraTarget = [cameraData.target.x, cameraData.target.y, cameraData.target.z];
 
   return (
     <>
       {/* Camera */}
       <PerspectiveCamera 
         makeDefault 
-        position={[15, 12, 15]} 
+        position={initialCameraPosition} 
         fov={60}
         near={0.1}
         far={1000}
@@ -90,7 +95,7 @@ const SceneContent = () => {
         minDistance={5}
         maxDistance={150} // Increased for better fog effect visibility
         minPolarAngle={0}
-        target={[0, 0, 0]}
+        target={initialCameraTarget}
         panSpeed={toolMode === TOOL_MODES.MOVE ? 2.0 : 0.8}
         rotateSpeed={toolMode === TOOL_MODES.MOVE ? 1.5 : 0.8}
         zoomSpeed={toolMode === TOOL_MODES.MOVE ? 1.5 : 1.0}
@@ -127,6 +132,8 @@ const SceneContent = () => {
       {/* Cursor preview */}
       <CursorPreview />
 
+      {/* Camera data tracker (invisible) */}
+      <CameraTracker />
 
       {/* <Pasto /> */}
 
@@ -137,17 +144,20 @@ const SceneContent = () => {
 
 // Main Scene component
 const Scene = () => {
-  const { fogSettings } = useEditor();
+  const { fogSettings, cameraData } = useEditor();
   
   // Dynamic background color based on fog settings
   const backgroundColor = fogSettings.enabled ? fogSettings.color : '#87CEEB';
+  
+  // Initial camera configuration
+  const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
   
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Suspense fallback={<LoadingFallback />}>
         <Canvas
           shadows
-          camera={{ position: [15, 12, 15], fov: 60 }}
+          camera={{ position: initialCameraPosition, fov: 60 }}
           style={{ 
             background: `linear-gradient(to bottom, ${backgroundColor} 0%, ${backgroundColor}CC 50%, ${backgroundColor}AA 100%)`
           }}

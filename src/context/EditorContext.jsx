@@ -9,7 +9,9 @@ const ACTIONS = {
   SET_INTERACTION_MODE: 'SET_INTERACTION_MODE',
   CLEAR_INTERACTION: 'CLEAR_INTERACTION',
   SET_TOOL_MODE: 'SET_TOOL_MODE',
-  UPDATE_FOG_SETTINGS: 'UPDATE_FOG_SETTINGS'
+  UPDATE_FOG_SETTINGS: 'UPDATE_FOG_SETTINGS',
+  UPDATE_CAMERA_DATA: 'UPDATE_CAMERA_DATA',
+  TOGGLE_DEBUG_UI: 'TOGGLE_DEBUG_UI'
 };
 
 // Interaction modes
@@ -40,6 +42,15 @@ const initialState = {
     near: 20,
     far: 80,
     affectSkybox: true // Always affect the skybox
+  },
+  cameraData: {
+    position: { x: 22.44, y: 6.49, z: 11.62 }, // Initial camera position
+    target: { x: 3.56, y: -2.45, z: 11.07 }, // Initial camera target
+    distance: 0,
+    fov: 60
+  },
+  debugUI: {
+    showCameraInfo: false // Debug UI hidden by default
   }
 };
 
@@ -163,6 +174,24 @@ const editorReducer = (state, action) => {
         }
       };
 
+    case ACTIONS.UPDATE_CAMERA_DATA:
+      return {
+        ...state,
+        cameraData: {
+          ...state.cameraData,
+          ...action.payload
+        }
+      };
+
+    case ACTIONS.TOGGLE_DEBUG_UI:
+      return {
+        ...state,
+        debugUI: {
+          ...state.debugUI,
+          showCameraInfo: !state.debugUI.showCameraInfo
+        }
+      };
+
     default:
       return state;
   }
@@ -212,6 +241,14 @@ export const EditorProvider = ({ children }) => {
     dispatch({ type: ACTIONS.UPDATE_FOG_SETTINGS, payload: settings });
   }, []);
 
+  const updateCameraData = useCallback((data) => {
+    dispatch({ type: ACTIONS.UPDATE_CAMERA_DATA, payload: data });
+  }, []);
+
+  const toggleDebugUI = useCallback(() => {
+    dispatch({ type: ACTIONS.TOGGLE_DEBUG_UI });
+  }, []);
+
   // Helper functions
   const isPositionOccupiedByBlocks = useCallback((position) => {
     return isPositionOccupied(position, state.blocks);
@@ -238,6 +275,8 @@ export const EditorProvider = ({ children }) => {
     clearInteraction,
     setToolMode,
     updateFogSettings,
+    updateCameraData,
+    toggleDebugUI,
     
     // Helpers
     isPositionOccupiedByBlocks,
