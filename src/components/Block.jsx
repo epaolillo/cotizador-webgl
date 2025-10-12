@@ -28,8 +28,12 @@ const Block = ({
 }) => {
   const blockColor = useMemo(() => {
     if (selected) return '#ff6b6b';
+    // Use the block's type color if available, otherwise use the provided color
+    if (block && block.type && block.type.color) {
+      return block.type.color;
+    }
     return color;
-  }, [selected, color]);
+  }, [selected, color, block]);
 
   if (!block || !block.positions || block.positions.length === 0) {
     return null;

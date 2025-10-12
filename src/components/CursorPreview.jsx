@@ -9,7 +9,8 @@ const CursorPreview = () => {
     interactionMode, 
     INTERACTION_MODES,
     getPreviewPositions,
-    isPositionOccupiedByBlocks
+    isPositionOccupiedByBlocks,
+    selectedObjectType
   } = useEditor();
 
   const previewPositions = useMemo(() => {
@@ -24,9 +25,12 @@ const CursorPreview = () => {
   // Color based on state
   const previewColor = useMemo(() => {
     if (hasOverlap) return '#ff4444'; // Red for invalid placement
-    if (interactionMode === INTERACTION_MODES.PLACING_SECOND) return '#44ff44'; // Green for second click
+    if (interactionMode === INTERACTION_MODES.PLACING_SECOND) {
+      // Use a lighter version of the selected object type color for second click
+      return selectedObjectType.color;
+    }
     return '#ffaa44'; // Orange for first click
-  }, [hasOverlap, interactionMode, INTERACTION_MODES]);
+  }, [hasOverlap, interactionMode, INTERACTION_MODES, selectedObjectType]);
 
   const previewOpacity = useMemo(() => {
     if (hasOverlap) return 0.3;

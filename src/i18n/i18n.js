@@ -40,6 +40,16 @@ const resources = {
         "height": "Altura",
         "metrics": "Métricas",
         "additional": "Adicional"
+      },
+      "objectTypes": {
+        "title": "Tipos de Objetos",
+        "selected": "Seleccionado",
+        "pool": "Pileta",
+        "palm": "Palmera",
+        "fence": "Cerco",
+        "terrain": "Movimiento de suelo",
+        "path": "Camino",
+        "block": "Bloque"
       }
     }
   },
@@ -79,6 +89,16 @@ const resources = {
         "height": "Height",
         "metrics": "Metrics",
         "additional": "Additional"
+      },
+      "objectTypes": {
+        "title": "Object Types",
+        "selected": "Selected",
+        "pool": "Pool",
+        "palm": "Palm Tree",
+        "fence": "Fence",
+        "terrain": "Ground Movement",
+        "path": "Path",
+        "block": "Block"
       }
     }
   }

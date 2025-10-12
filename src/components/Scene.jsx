@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
-import Block from './Block';
+import ObjectRenderer from './ObjectRenderer';
 import CursorPreview from './CursorPreview';
 import BlockGrid from './BlockGrid';
 import Skybox from './Skybox';
@@ -71,7 +71,7 @@ const Lighting = () => {
 
 // Scene content component
 const SceneContent = () => {
-  const { blocks, fogSettings, cameraData, cameraView } = useEditor();
+  const { blocks, fogSettings, cameraData, cameraView, interactionMode, INTERACTION_MODES } = useEditor();
 
   // Initial camera configuration from context
   const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
@@ -88,18 +88,18 @@ const SceneContent = () => {
         far={1000}
       />
 
-      {/* Camera controls - disabled during animation */}
+      {/* Camera controls - disabled during animation and block insertion */}
       <OrbitControls
-        enablePan={!cameraView.isAnimating}
-        enableZoom={!cameraView.isAnimating}
-        enableRotate={!cameraView.isAnimating}
+        enablePan={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
+        enableZoom={false} // Zoom completely disabled
+        enableRotate={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
         minDistance={5}
         maxDistance={150}
         minPolarAngle={0}
         target={initialCameraTarget}
         panSpeed={0.8}
         rotateSpeed={0.8}
-        zoomSpeed={1.0}
+        zoomSpeed={0} // Ensure zoom is disabled
         makeDefault
       />
 
@@ -120,13 +120,13 @@ const SceneContent = () => {
 
       <Box position={[0, 0, 0]} args={[1, 1, 1]} />
 
-      {/* Render all blocks */}
+      {/* Render all blocks using ObjectRenderer for type-specific components */}
       {blocks.map((block) => (
-        <Block
+        <ObjectRenderer
           key={block.id}
           block={block}
-          color="#4a90e2"
           opacity={1.0}
+          selected={false}
         />
       ))}
 

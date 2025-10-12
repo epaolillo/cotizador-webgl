@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
 import ViewPanel from './ViewPanel';
 import CameraInfo from './CameraInfo';
+import ObjectTypePanel from './ObjectTypePanel';
 
 const UI = () => {
   const { t, i18n } = useTranslation();
@@ -58,15 +59,7 @@ const UI = () => {
       position: 'absolute',
       top: '20px',
       left: '20px',
-      pointerEvents: 'auto',
-      background: 'rgba(0, 0, 0, 0.8)',
-      backdropFilter: 'blur(10px)',
-      color: 'white',
-      padding: '16px',
-      borderRadius: '12px',
-      minWidth: '250px',
-      maxWidth: '350px',
-      border: '1px solid rgba(255, 255, 255, 0.1)'
+      pointerEvents: 'auto'
     },
     topRight: {
       position: 'absolute',
@@ -152,55 +145,9 @@ const UI = () => {
 
   return (
     <div style={styles.container}>
-      {/* Main panel - top left */}
+      {/* Object Type Panel - top left */}
       <div style={styles.topLeft}>
-        <div style={styles.title}>
-          {t('app.title')}
-        </div>
-        
-        <div style={styles.subtitle}>
-          {getInteractionModeText()}
-        </div>
-
-        {showInstructions && (
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
-              {t('controls.instructions')}:
-            </div>
-            
-            <div style={styles.instructionItem}>
-              <span style={styles.instructionBullet}>•</span>
-              {t('controls.firstClick')}
-            </div>
-            
-            <div style={styles.instructionItem}>
-              <span style={styles.instructionBullet}>•</span>
-              {t('controls.secondClick')}
-            </div>
-            
-            <div style={styles.instructionItem}>
-              <span style={styles.instructionBullet}>•</span>
-              {t('controls.samePoint')}
-            </div>
-            
-            <div style={styles.instructionItem}>
-              <span style={styles.instructionBullet}>•</span>
-              {t('controls.rotate')}
-            </div>
-            
-            <div style={styles.instructionItem}>
-              <span style={styles.instructionBullet}>•</span>
-              {t('controls.zoom')}
-            </div>
-          </div>
-        )}
-        
-        <button
-          style={styles.toggleButton}
-          onClick={() => setShowInstructions(!showInstructions)}
-        >
-          {showInstructions ? 'Hide' : 'Show'} Instructions
-        </button>
+        <ObjectTypePanel />
       </div>
 
       {/* Control buttons - top right */}

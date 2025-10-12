@@ -9,6 +9,7 @@ const ACTIONS = {
   SET_INTERACTION_MODE: 'SET_INTERACTION_MODE',
   CLEAR_INTERACTION: 'CLEAR_INTERACTION',
   SET_TOOL_MODE: 'SET_TOOL_MODE',
+  SET_OBJECT_TYPE: 'SET_OBJECT_TYPE',
   UPDATE_FOG_SETTINGS: 'UPDATE_FOG_SETTINGS',
   UPDATE_CAMERA_DATA: 'UPDATE_CAMERA_DATA',
   TOGGLE_DEBUG_UI: 'TOGGLE_DEBUG_UI',
@@ -26,6 +27,65 @@ export const INTERACTION_MODES = {
 // Tool modes
 export const TOOL_MODES = {
   BLOCK: 'block'
+};
+
+// Object types with their properties
+// Each object can have:
+// - id: unique identifier for the object type
+// - color: base color for the object
+// - name: display name (will be overridden by i18n translations)
+// - component: name of the component that renders this object type
+// - height: height in units (for tall objects like palm trees)
+// - description: additional metadata (optional)
+export const OBJECT_TYPES = {
+  POOL: {
+    id: 'pool',
+    color: '#00bfff', // Deep sky blue
+    name: 'Pileta',
+    component: 'Block', // Uses default Block component
+    height: 1,
+    description: 'Swimming pool area'
+  },
+  PALM: {
+    id: 'palm', 
+    color: '#228B22', // Forest green
+    name: 'Palmera',
+    component: 'Palm', // Uses custom Palm component
+    height: 2, // Double height palm tree
+    description: 'Palm tree with trunk and leaves'
+  },
+  FENCE: {
+    id: 'fence',
+    color: '#8B4513', // Saddle brown
+    name: 'Cerco',
+    component: 'Block', // Uses default Block component
+    height: 1,
+    description: 'Fence or barrier'
+  },
+  TERRAIN: {
+    id: 'terrain',
+    color: '#DEB887', // Burlywood
+    name: 'Movimiento de suelo',
+    component: 'Block', // Uses default Block component
+    height: 1,
+    description: 'Ground movement or earthwork'
+  },
+  PATH: {
+    id: 'path',
+    color: '#696969', // Dim gray
+    name: 'Camino',
+    component: 'Block', // Uses default Block component
+    height: 1,
+    description: 'Pathway or walkway'
+  },
+  BLOCK: {
+    id: 'block',
+    color: '#4a90e2', // Original block color
+    name: 'Bloque',
+    component: 'Block', // Uses default Block component
+    height: 1,
+    description: 'Generic block unit'
+  }
 };
 
 // Camera views
@@ -55,6 +115,7 @@ const initialState = {
   interactionMode: INTERACTION_MODES.NONE,
   selectedBlockId: null,
   toolMode: TOOL_MODES.BLOCK,
+  selectedObjectType: OBJECT_TYPES.BLOCK,
   fogSettings: {
     enabled: true,
     color: '#ffffff', // White fog color
@@ -141,10 +202,11 @@ const editorReducer = (state, action) => {
 
       const positions = generateBlockPositions(start, end);
       const newBlock = {
-        id: `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `${state.selectedObjectType.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         positions,
         start,
         end,
+        type: state.selectedObjectType,
         createdAt: Date.now()
       };
 
@@ -185,6 +247,16 @@ const editorReducer = (state, action) => {
         ...state,
         toolMode: action.payload,
         // Clear interaction when switching tools
+        firstClickPosition: null,
+        interactionMode: INTERACTION_MODES.NONE,
+        previewPosition: null
+      };
+
+    case ACTIONS.SET_OBJECT_TYPE:
+      return {
+        ...state,
+        selectedObjectType: action.payload,
+        // Clear interaction when switching object types
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
         previewPosition: null
@@ -282,6 +354,10 @@ export const EditorProvider = ({ children }) => {
     dispatch({ type: ACTIONS.SET_TOOL_MODE, payload: mode });
   }, []);
 
+  const setObjectType = useCallback((objectType) => {
+    dispatch({ type: ACTIONS.SET_OBJECT_TYPE, payload: objectType });
+  }, []);
+
   const updateFogSettings = useCallback((settings) => {
     dispatch({ type: ACTIONS.UPDATE_FOG_SETTINGS, payload: settings });
   }, []);
@@ -328,6 +404,7 @@ export const EditorProvider = ({ children }) => {
     clearBlocks,
     clearInteraction,
     setToolMode,
+    setObjectType,
     updateFogSettings,
     updateCameraData,
     toggleDebugUI,
@@ -341,6 +418,7 @@ export const EditorProvider = ({ children }) => {
     // Constants
     INTERACTION_MODES,
     TOOL_MODES,
+    OBJECT_TYPES,
     CAMERA_VIEWS
   };
 
