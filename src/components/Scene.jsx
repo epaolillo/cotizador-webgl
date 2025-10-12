@@ -1,10 +1,13 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
 import Block from './Block';
 import CursorPreview from './CursorPreview';
 import BlockGrid from './BlockGrid';
+import Skybox from './Skybox';
+import InfiniteGround from './InfiniteGround';
 import { Box } from '@react-three/drei';
 
 // Loading fallback component
@@ -28,35 +31,35 @@ const LoadingFallback = () => {
 const Lighting = () => {
   return (
     <>
-      {/* Ambient light for overall illumination */}
-      <ambientLight intensity={0.4} color="#ffffff" />
+      {/* Ambient light for overall illumination - increased for skybox */}
+      <ambientLight intensity={0.8} color="#ffffff" />
       
-      {/* Main directional light (sun-like) */}
+      {/* Main directional light (sun-like) - positioned to work with skybox */}
       <directionalLight
-        position={[10, 10, 5]}
-        intensity={1.0}
+        position={[20, 25, 15]}
+        intensity={1.5}
         color="#ffffff"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
+        shadow-camera-far={150}
+        shadow-camera-left={-40}
+        shadow-camera-right={40}
+        shadow-camera-top={40}
+        shadow-camera-bottom={-40}
       />
       
       {/* Fill light from opposite side */}
       <directionalLight
-        position={[-10, 8, -5]}
-        intensity={0.3}
-        color="#b4c8ff"
+        position={[-20, 20, -15]}
+        intensity={0.6}
+        color="#87CEEB"
       />
       
       {/* Top light for better visibility */}
       <directionalLight
-        position={[0, 20, 0]}
-        intensity={0.2}
+        position={[0, 30, 0]}
+        intensity={0.4}
         color="#ffffff"
       />
     </>
@@ -96,8 +99,11 @@ const SceneContent = () => {
       {/* Lighting */}
       <Lighting />
 
-      {/* Environment for reflections and ambient lighting */}
-      <Environment preset="sunset" />
+      {/* Skybox for infinite sky */}
+      <Skybox />
+
+      {/* Infinite ground */}
+      <InfiniteGround />
 
       {/* Block grid (handles interaction) */}
       <BlockGrid />
@@ -134,7 +140,7 @@ const Scene = () => {
           shadows
           camera={{ position: [15, 12, 15], fov: 60 }}
           style={{ 
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%)'
+            background: 'linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%)' // Gradient background for smooth transition
           }}
           gl={{
             antialias: true,
@@ -142,6 +148,7 @@ const Scene = () => {
             preserveDrawingBuffer: true
           }}
           dpr={[1, 2]} // Device pixel ratio for better quality on high-DPI screens
+          fog={new THREE.FogExp2(0x87CEEB, 0.02)} // Exponential fog for more natural effect
         >
           <SceneContent />
         </Canvas>

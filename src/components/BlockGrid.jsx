@@ -260,7 +260,6 @@ const BlockGrid = () => {
         <meshStandardMaterial map={brickTex} />
       </Box>
 
-
       <Box
         args={[0.1, 3, GRID_SIZE]}
         position={[ (GRID_SIZE ) + 0.5, 1, (GRID_SIZE / 2) + 0.5]}
@@ -269,7 +268,6 @@ const BlockGrid = () => {
       >
         <meshStandardMaterial map={brickTex} />
       </Box>
-
 
       <Box
         args={[GRID_SIZE, 3, 0.1]}
