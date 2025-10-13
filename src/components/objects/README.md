@@ -4,10 +4,15 @@ This directory contains custom 3D object components that can be used in the scen
 
 ## Available Components
 
-### Palm (Palm.jsx)
+### Tree (Tree.jsx)
 - **Height**: 2 units (double height)
-- **Description**: Palm tree with trunk and leaves
-- **Features**: Multi-layer leaves for visual depth
+- **Description**: Tree with 3D GLB model
+- **Features**: 
+  - Uses loaded 3D model (tree2.glb) with proper instancing
+  - Random Y-axis rotation for natural variety (each tree looks different)
+  - Position-based rotation seed for consistency across reloads
+- **Model**: Located at `/src/components/objects/glb/tree2.glb`
+- **Unique**: true - Placed with single click instead of drag selection
 
 ## How to Add a New Custom Object
 
@@ -76,13 +81,25 @@ export const OBJECT_TYPES = {
     id: 'pool',
     color: '#00bfff',
     name: 'Pileta',
-    component: 'Pool', // Reference to your component
-    height: 0.3,       // Custom property
+    component: 'Pool',   // Reference to your component
+    height: 0.3,         // Custom property
+    unique: false,       // true = single click placement, false = drag selection
     description: 'Swimming pool with water effect'
   },
   // ... other types
 };
 ```
+
+#### The `unique` Property
+
+- **`unique: true`**: Object is placed with a single click. Perfect for complex 3D models like trees, furniture, or decorative elements that look better as individual objects.
+- **`unique: false`**: Object can be placed with drag selection (click and drag to define area). Ideal for walls, floors, paths, or any object that makes sense in rectangular patterns.
+
+**When to use `unique: true`:**
+- Complex 3D models (trees, furniture, vehicles)
+- Objects that look unnatural when repeated in patterns
+- Decorative or standalone elements
+- Objects where precise positioning is more important than area coverage
 
 ### Step 4: Done!
 
@@ -114,4 +131,44 @@ All object components receive these props:
 - Load custom 3D models with `useGLTF` from `@react-three/drei`
 - Add animations with `useFrame` from `@react-three/fiber`
 - Consider object scale when designing (1 unit = 1 meter in the scene)
+
+## Loading GLB/GLTF Models
+
+To use 3D models (GLB/GLTF format):
+
+```jsx
+import { useGLTF } from '@react-three/drei';
+
+const MyObject = ({ block, opacity, selected }) => {
+  // Load the model
+  const { scene } = useGLTF('/path/to/your/model.glb');
+  
+  // Clone for each instance
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
+  
+  return (
+    <group>
+      {block.positions.map((position, index) => (
+        <primitive
+          key={`myobj_${index}`}
+          object={clonedScene.clone()}
+          position={[position.x, position.y, position.z]}
+          scale={[1, 1, 1]}
+        />
+      ))}
+    </group>
+  );
+};
+
+// Preload for better performance
+useGLTF.preload('/path/to/your/model.glb');
+```
+
+### GLB Model Guidelines
+
+1. **Place models** in `src/components/objects/glb/` directory
+2. **Optimize models** before importing (reduce polygons, compress textures)
+3. **Test scale** - adjust the `scale` prop on `primitive` as needed
+4. **Clone scenes** to avoid material sharing between instances
+5. **Preload models** using `useGLTF.preload()` for better performance
 

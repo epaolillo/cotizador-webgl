@@ -14,8 +14,13 @@ const CursorPreview = () => {
   } = useEditor();
 
   const previewPositions = useMemo(() => {
+    // For unique objects, always show only single position preview
+    if (selectedObjectType && selectedObjectType.unique) {
+      return previewPosition ? [previewPosition] : [];
+    }
+    // For multi-block objects, use the normal multi-position preview
     return getPreviewPositions();
-  }, [getPreviewPositions]);
+  }, [getPreviewPositions, selectedObjectType, previewPosition]);
 
   // Determine if any preview position would cause an overlap
   const hasOverlap = useMemo(() => {
@@ -25,8 +30,15 @@ const CursorPreview = () => {
   // Color based on state
   const previewColor = useMemo(() => {
     if (hasOverlap) return '#ff4444'; // Red for invalid placement
+    
+    // For unique objects, always show the object's color
+    if (selectedObjectType && selectedObjectType.unique) {
+      return selectedObjectType.color;
+    }
+    
+    // For multi-block objects, use different colors based on interaction state
     if (interactionMode === INTERACTION_MODES.PLACING_SECOND) {
-      // Use a lighter version of the selected object type color for second click
+      // Use the selected object type color for second click
       return selectedObjectType.color;
     }
     return '#ffaa44'; // Orange for first click
@@ -75,8 +87,8 @@ const CursorPreview = () => {
         </Box>
       ))}
 
-      {/* First click indicator */}
-      {firstClickPosition && (
+      {/* First click indicator - only show for multi-block objects */}
+      {firstClickPosition && !(selectedObjectType && selectedObjectType.unique) && (
         <Box 
           position={[firstClickPosition.x, firstClickPosition.y, firstClickPosition.z]}
           args={[1, 1, 1]}

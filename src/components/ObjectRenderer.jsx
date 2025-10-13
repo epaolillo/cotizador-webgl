@@ -1,6 +1,6 @@
 import React from 'react';
 import Block from './Block';
-import Palm from './objects/Palm';
+import Tree from './objects/Tree';
 
 /**
  * Component Registry - Maps object type IDs to their JSX components
@@ -14,7 +14,7 @@ import Palm from './objects/Palm';
 const COMPONENT_REGISTRY = {
   block: Block,    // Default block component
   pool: Block,     // Pool uses default Block for now (placeholder for future custom component)
-  palm: Palm,      // Palm uses custom Palm component (double height)
+  tree: Tree,      // Tree uses custom Tree component with GLB model
   fence: Block,    // Fence uses default Block for now (placeholder for future custom component)
   terrain: Block,  // Terrain uses default Block for now (placeholder for future custom component)
   path: Block,     // Path uses default Block for now (placeholder for future custom component)

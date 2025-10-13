@@ -13,7 +13,8 @@ const UI = () => {
     interactionMode, 
     INTERACTION_MODES,
     clearInteraction,
-    debugUI
+    debugUI,
+    selectedObjectType
   } = useEditor();
   
   const [showInstructions, setShowInstructions] = useState(true);
@@ -34,6 +35,12 @@ const UI = () => {
   };
 
   const getInteractionModeText = () => {
+    // For unique objects, show single-click instruction
+    if (selectedObjectType && selectedObjectType.unique) {
+      return t('controls.singleClick');
+    }
+    
+    // For multi-block objects, show multi-step instructions
     switch (interactionMode) {
       case INTERACTION_MODES.PLACING_FIRST:
         return t('controls.firstClick');

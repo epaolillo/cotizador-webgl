@@ -129,7 +129,8 @@ const BlockGrid = () => {
     INTERACTION_MODES,
     toolMode,
     TOOL_MODES,
-    clearInteraction
+    clearInteraction,
+    selectedObjectType
   } = useEditor();
   
   const { camera, raycaster } = useThree();
@@ -204,7 +205,14 @@ const BlockGrid = () => {
     // Handle click based on current interaction mode
     switch (interactionMode) {
       case INTERACTION_MODES.NONE:
-        handleFirstClick(gridPosition);
+        // For unique objects, place immediately with single click
+        if (selectedObjectType && selectedObjectType.unique) {
+          // Place single block at clicked position
+          handleSecondClick(gridPosition);
+        } else {
+          // For multi-block objects, start selection
+          handleFirstClick(gridPosition);
+        }
         break;
         
       case INTERACTION_MODES.PLACING_SECOND:

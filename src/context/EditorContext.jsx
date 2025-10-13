@@ -36,6 +36,7 @@ export const TOOL_MODES = {
 // - name: display name (will be overridden by i18n translations)
 // - component: name of the component that renders this object type
 // - height: height in units (for tall objects like palm trees)
+// - unique: if true, object is placed with single click instead of drag selection
 // - description: additional metadata (optional)
 export const OBJECT_TYPES = {
   POOL: {
@@ -44,15 +45,17 @@ export const OBJECT_TYPES = {
     name: 'Pileta',
     component: 'Block', // Uses default Block component
     height: 1,
+    unique: false, // Can be placed with multi-block selection
     description: 'Swimming pool area'
   },
-  PALM: {
-    id: 'palm', 
+  TREE: {
+    id: 'tree', 
     color: '#228B22', // Forest green
-    name: 'Palmera',
-    component: 'Palm', // Uses custom Palm component
-    height: 2, // Double height palm tree
-    description: 'Palm tree with trunk and leaves'
+    name: 'Arbol',
+    component: 'Tree', // Uses custom Tree component with GLB model
+    height: 2, // Double height tree
+    unique: true, // Single click placement - trees look better as individual objects
+    description: 'Tree with 3D model'
   },
   FENCE: {
     id: 'fence',
@@ -60,6 +63,7 @@ export const OBJECT_TYPES = {
     name: 'Cerco',
     component: 'Block', // Uses default Block component
     height: 1,
+    unique: false, // Can be placed with multi-block selection
     description: 'Fence or barrier'
   },
   TERRAIN: {
@@ -68,6 +72,7 @@ export const OBJECT_TYPES = {
     name: 'Movimiento de suelo',
     component: 'Block', // Uses default Block component
     height: 1,
+    unique: false, // Can be placed with multi-block selection
     description: 'Ground movement or earthwork'
   },
   PATH: {
@@ -76,6 +81,7 @@ export const OBJECT_TYPES = {
     name: 'Camino',
     component: 'Block', // Uses default Block component
     height: 1,
+    unique: false, // Can be placed with multi-block selection
     description: 'Pathway or walkway'
   },
   BLOCK: {
@@ -84,6 +90,7 @@ export const OBJECT_TYPES = {
     name: 'Bloque',
     component: 'Block', // Uses default Block component
     height: 1,
+    unique: false, // Can be placed with multi-block selection
     description: 'Generic block unit'
   }
 };
@@ -331,15 +338,16 @@ export const EditorProvider = ({ children }) => {
   }, []);
 
   const handleSecondClick = useCallback((position) => {
-    if (state.firstClickPosition) {
-      dispatch({ 
-        type: ACTIONS.ADD_BLOCK, 
-        payload: { 
-          start: state.firstClickPosition, 
-          end: position 
-        } 
-      });
-    }
+    // For unique objects (placed with single click), use same position for start and end
+    const startPosition = state.firstClickPosition || position;
+    
+    dispatch({ 
+      type: ACTIONS.ADD_BLOCK, 
+      payload: { 
+        start: startPosition, 
+        end: position 
+      } 
+    });
   }, [state.firstClickPosition]);
 
   const clearBlocks = useCallback(() => {

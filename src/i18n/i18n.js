@@ -15,6 +15,7 @@ const resources = {
         "firstClick": "Primer clic: define la base del bloque",
         "secondClick": "Segundo clic: confirma la inserción",
         "samePoint": "Mismo punto: bloque unitario",
+        "singleClick": "Clic para colocar (objeto único)",
         "rotate": "Arrastra para rotar la cámara",
         "zoom": "Rueda del mouse para zoom",
         "ready": "Listo para colocar bloques"
@@ -45,7 +46,7 @@ const resources = {
         "title": "Tipos de Objetos",
         "selected": "Seleccionado",
         "pool": "Pileta",
-        "palm": "Palmera",
+        "tree": "Árbol",
         "fence": "Cerco",
         "terrain": "Movimiento de suelo",
         "path": "Camino",
@@ -64,6 +65,7 @@ const resources = {
         "firstClick": "First click: define block base",
         "secondClick": "Second click: confirm insertion",
         "samePoint": "Same point: unit block",
+        "singleClick": "Click to place (unique object)",
         "rotate": "Drag to rotate camera",
         "zoom": "Mouse wheel to zoom",
         "ready": "Ready to place blocks"
@@ -94,7 +96,7 @@ const resources = {
         "title": "Object Types",
         "selected": "Selected",
         "pool": "Pool",
-        "palm": "Palm Tree",
+        "tree": "Tree",
         "fence": "Fence",
         "terrain": "Ground Movement",
         "path": "Path",
