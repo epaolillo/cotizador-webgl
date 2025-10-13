@@ -41,12 +41,12 @@ export const TOOL_MODES = {
 export const OBJECT_TYPES = {
   POOL: {
     id: 'pool',
-    color: '#00bfff', // Deep sky blue
+    color: '#00CED1', // Dark turquoise
     name: 'Pileta',
-    component: 'Block', // Uses default Block component
-    height: 1,
+    component: 'Water', // Uses custom Water component with reflective surface
+    height: 0.5, // Half height for water surface
     unique: false, // Can be placed with multi-block selection
-    description: 'Swimming pool area'
+    description: 'Swimming pool with reflective water surface'
   },
   TREE: {
     id: 'tree', 

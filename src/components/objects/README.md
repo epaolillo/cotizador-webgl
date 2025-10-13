@@ -14,6 +14,19 @@ This directory contains custom 3D object components that can be used in the scen
 - **Model**: Located at `/src/components/objects/glb/tree2.glb`
 - **Unique**: true - Placed with single click instead of drag selection
 
+### Water (Water.jsx)
+- **Height**: 0.5 units (half height)
+- **Description**: Reflective water surface for pools
+- **Features**: 
+  - Only top surface visible (no side faces to avoid visible seams)
+  - Turquoise reflective material with mirror-like finish
+  - Physical-based material with high metalness and low roughness
+  - Receives shadows from other objects
+  - Transparent with clearcoat for realistic water appearance
+  - Solid body with reflective top surface
+- **Used by**: Pool object type
+- **Unique**: false - Placed with drag selection for pool areas
+
 ## How to Add a New Custom Object
 
 ### Step 1: Create the Component

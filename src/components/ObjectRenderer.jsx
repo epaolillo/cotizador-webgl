@@ -1,6 +1,7 @@
 import React from 'react';
 import Block from './Block';
 import Tree from './objects/Tree';
+import Water from './objects/Water';
 
 /**
  * Component Registry - Maps object type IDs to their JSX components
@@ -13,7 +14,8 @@ import Tree from './objects/Tree';
  */
 const COMPONENT_REGISTRY = {
   block: Block,    // Default block component
-  pool: Block,     // Pool uses default Block for now (placeholder for future custom component)
+  water: Water,    // Water uses custom Water component with reflective surface
+  pool: Water,     // Pool uses Water component with reflective turquoise surface
   tree: Tree,      // Tree uses custom Tree component with GLB model
   fence: Block,    // Fence uses default Block for now (placeholder for future custom component)
   terrain: Block,  // Terrain uses default Block for now (placeholder for future custom component)
