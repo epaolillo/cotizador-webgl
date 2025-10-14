@@ -7,8 +7,9 @@ import * as THREE from 'three';
  * Represents a tree using a loaded 3D model from GLB file
  */
 const Tree = ({ block, opacity = 1.0, selected = false }) => {
-  // Load the GLB model
-  const { scene } = useGLTF('/glb/tree2.glb');
+  // Load the GLB model with base URL for GitHub Pages compatibility
+  const modelPath = `${import.meta.env.BASE_URL}glb/tree2.glb`;
+  const { scene } = useGLTF(modelPath);
   
   if (!scene) {
     console.error('Tree model scene is undefined');
@@ -111,6 +112,6 @@ const Tree = ({ block, opacity = 1.0, selected = false }) => {
 };
 
 // Preload the model for better performance
-useGLTF.preload('/glb/tree2.glb');
+useGLTF.preload(`${import.meta.env.BASE_URL}glb/tree2.glb`);
 
 export default Tree;

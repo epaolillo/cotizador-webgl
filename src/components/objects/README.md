@@ -153,8 +153,9 @@ To use 3D models (GLB/GLTF format):
 import { useGLTF } from '@react-three/drei';
 
 const MyObject = ({ block, opacity, selected }) => {
-  // Load the model
-  const { scene } = useGLTF('/glb/your-model.glb');
+  // Load the model with base URL for GitHub Pages compatibility
+  const modelPath = `${import.meta.env.BASE_URL}glb/your-model.glb`;
+  const { scene } = useGLTF(modelPath);
   
   // Clone for each instance
   const clonedScene = useMemo(() => scene.clone(), [scene]);
@@ -174,15 +175,17 @@ const MyObject = ({ block, opacity, selected }) => {
 };
 
 // Preload for better performance
-useGLTF.preload('/glb/your-model.glb');
+useGLTF.preload(`${import.meta.env.BASE_URL}glb/your-model.glb`);
 ```
 
 ### GLB Model Guidelines
 
-1. **Place models** in `public/glb/` directory (Vite will copy them to dist automatically)
+1. **Place models** in `public/glb/` directory (Vite will copy them to docs automatically)
 2. **Optimize models** before importing (reduce polygons, compress textures)
 3. **Test scale** - adjust the `scale` prop on `primitive` as needed
 4. **Clone scenes** to avoid material sharing between instances
 5. **Preload models** using `useGLTF.preload()` for better performance
-6. **Reference models** using `/glb/model-name.glb` (path relative to public folder)
+6. **Use BASE_URL** - Always use `${import.meta.env.BASE_URL}glb/model-name.glb` for GitHub Pages compatibility
+   - This ensures the path works both locally and in production
+   - `import.meta.env.BASE_URL` is automatically set by Vite based on the `base` config
 
