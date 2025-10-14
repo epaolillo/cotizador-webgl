@@ -11,7 +11,7 @@ This directory contains custom 3D object components that can be used in the scen
   - Uses loaded 3D model (tree2.glb) with proper instancing
   - Random Y-axis rotation for natural variety (each tree looks different)
   - Position-based rotation seed for consistency across reloads
-- **Model**: Located at `/src/components/objects/glb/tree2.glb`
+- **Model**: Located at `/public/glb/tree2.glb`
 - **Unique**: true - Placed with single click instead of drag selection
 
 ### Water (Water.jsx)
@@ -154,7 +154,7 @@ import { useGLTF } from '@react-three/drei';
 
 const MyObject = ({ block, opacity, selected }) => {
   // Load the model
-  const { scene } = useGLTF('/path/to/your/model.glb');
+  const { scene } = useGLTF('/glb/your-model.glb');
   
   // Clone for each instance
   const clonedScene = useMemo(() => scene.clone(), [scene]);
@@ -174,14 +174,15 @@ const MyObject = ({ block, opacity, selected }) => {
 };
 
 // Preload for better performance
-useGLTF.preload('/path/to/your/model.glb');
+useGLTF.preload('/glb/your-model.glb');
 ```
 
 ### GLB Model Guidelines
 
-1. **Place models** in `src/components/objects/glb/` directory
+1. **Place models** in `public/glb/` directory (Vite will copy them to dist automatically)
 2. **Optimize models** before importing (reduce polygons, compress textures)
 3. **Test scale** - adjust the `scale` prop on `primitive` as needed
 4. **Clone scenes** to avoid material sharing between instances
 5. **Preload models** using `useGLTF.preload()` for better performance
+6. **Reference models** using `/glb/model-name.glb` (path relative to public folder)
 

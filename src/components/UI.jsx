@@ -159,13 +159,6 @@ const UI = () => {
 
       {/* Control buttons - top right */}
       <div style={styles.topRight}>
-        <button
-          style={styles.button}
-          onClick={toggleLanguage}
-          title="Change Language / Cambiar Idioma"
-        >
-          {i18n.language === 'es' ? '🇺🇸 EN' : '🇪🇸 ES'}
-        </button>
         
         <button
           style={{...styles.button, ...styles.dangerButton}}

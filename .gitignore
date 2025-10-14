@@ -36,7 +36,6 @@ yarn.lock
 
 # Build outputs
 build/
-dist/
 
 # OS generated files
 Thumbs.db
