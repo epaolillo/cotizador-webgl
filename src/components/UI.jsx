@@ -92,7 +92,6 @@ const UI = () => {
     },
     button: {
       background: 'rgba(74, 144, 226, 0.9)',
-      border: 'none',
       color: 'white',
       padding: '10px 16px',
       borderRadius: '8px',

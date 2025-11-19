@@ -14,7 +14,8 @@ const ACTIONS = {
   UPDATE_CAMERA_DATA: 'UPDATE_CAMERA_DATA',
   TOGGLE_DEBUG_UI: 'TOGGLE_DEBUG_UI',
   ANIMATE_TO_VIEW: 'ANIMATE_TO_VIEW',
-  SET_CURRENT_VIEW: 'SET_CURRENT_VIEW'
+  SET_CURRENT_VIEW: 'SET_CURRENT_VIEW',
+  TOGGLE_TOOL_ACTIVE: 'TOGGLE_TOOL_ACTIVE'
 };
 
 // Interaction modes
@@ -123,6 +124,7 @@ const initialState = {
   selectedBlockId: null,
   toolMode: TOOL_MODES.BLOCK,
   selectedObjectType: OBJECT_TYPES.BLOCK,
+  toolActive: true, // Tool is active by default
   fogSettings: {
     enabled: true,
     color: '#ffffff', // White fog color
@@ -263,6 +265,7 @@ const editorReducer = (state, action) => {
       return {
         ...state,
         selectedObjectType: action.payload,
+        toolActive: true, // Activate tool when selecting an object type
         // Clear interaction when switching object types
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
@@ -314,6 +317,16 @@ const editorReducer = (state, action) => {
           isAnimating: false,
           targetView: null
         }
+      };
+
+    case ACTIONS.TOGGLE_TOOL_ACTIVE:
+      return {
+        ...state,
+        toolActive: !state.toolActive,
+        // Clear interaction when toggling tool
+        firstClickPosition: null,
+        interactionMode: INTERACTION_MODES.NONE,
+        previewPosition: null
       };
 
     default:
@@ -387,6 +400,10 @@ export const EditorProvider = ({ children }) => {
     dispatch({ type: ACTIONS.SET_CURRENT_VIEW, payload: viewName });
   }, []);
 
+  const toggleToolActive = useCallback(() => {
+    dispatch({ type: ACTIONS.TOGGLE_TOOL_ACTIVE });
+  }, []);
+
   // Helper functions
   const isPositionOccupiedByBlocks = useCallback((position) => {
     return isPositionOccupied(position, state.blocks);
@@ -418,6 +435,7 @@ export const EditorProvider = ({ children }) => {
     toggleDebugUI,
     animateToView,
     setCurrentView,
+    toggleToolActive,
     
     // Helpers
     isPositionOccupiedByBlocks,

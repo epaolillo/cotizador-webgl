@@ -10,17 +10,22 @@ const CursorPreview = () => {
     INTERACTION_MODES,
     getPreviewPositions,
     isPositionOccupiedByBlocks,
-    selectedObjectType
+    selectedObjectType,
+    toolActive
   } = useEditor();
 
   const previewPositions = useMemo(() => {
+    // Don't show preview if tool is not active
+    if (!toolActive) {
+      return [];
+    }
     // For unique objects, always show only single position preview
     if (selectedObjectType && selectedObjectType.unique) {
       return previewPosition ? [previewPosition] : [];
     }
     // For multi-block objects, use the normal multi-position preview
     return getPreviewPositions();
-  }, [getPreviewPositions, selectedObjectType, previewPosition]);
+  }, [getPreviewPositions, selectedObjectType, previewPosition, toolActive]);
 
   // Determine if any preview position would cause an overlap
   const hasOverlap = useMemo(() => {

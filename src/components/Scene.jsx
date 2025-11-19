@@ -70,9 +70,7 @@ const Lighting = () => {
 };
 
 // Scene content component
-const SceneContent = () => {
-  const { blocks, fogSettings, cameraData, cameraView, interactionMode, INTERACTION_MODES } = useEditor();
-
+const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERACTION_MODES }) => {
   // Initial camera configuration from context
   const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
   const initialCameraTarget = [cameraData.target.x, cameraData.target.y, cameraData.target.z];
@@ -148,7 +146,7 @@ const SceneContent = () => {
 
 // Main Scene component
 const Scene = () => {
-  const { fogSettings, cameraData } = useEditor();
+  const { fogSettings, cameraData, cameraView, interactionMode, INTERACTION_MODES, blocks } = useEditor();
   
   // Dynamic background color based on fog settings
   const backgroundColor = fogSettings.enabled ? fogSettings.color : '#87CEEB';
@@ -173,7 +171,13 @@ const Scene = () => {
           dpr={[1, 2]} // Device pixel ratio for better quality on high-DPI screens
           // Fog is now handled by AtmosphericFog component for better control
         >
-          <SceneContent />
+          <SceneContent 
+            blocks={blocks}
+            cameraData={cameraData}
+            cameraView={cameraView}
+            interactionMode={interactionMode}
+            INTERACTION_MODES={INTERACTION_MODES}
+          />
         </Canvas>
       </Suspense>
     </div>

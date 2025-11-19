@@ -130,7 +130,9 @@ const BlockGrid = () => {
     toolMode,
     TOOL_MODES,
     clearInteraction,
-    selectedObjectType
+    selectedObjectType,
+    toolActive,
+    toggleToolActive
   } = useEditor();
   
   const { camera, raycaster } = useThree();
@@ -159,8 +161,8 @@ const BlockGrid = () => {
 
   // Handle pointer movement for preview
   const handlePointerMove = (event) => {
-    // Only show preview in block mode
-    if (toolMode !== TOOL_MODES.BLOCK) {
+    // Only show preview when tool is active and in block mode
+    if (!toolActive || toolMode !== TOOL_MODES.BLOCK) {
       setPreviewPosition(null);
       return;
     }
@@ -186,8 +188,8 @@ const BlockGrid = () => {
 
   // Handle clicks for block placement
   const handlePointerDown = (event) => {
-    // Only handle clicks in block mode
-    if (toolMode !== TOOL_MODES.BLOCK) {
+    // Only handle clicks when tool is active and in block mode
+    if (!toolActive || toolMode !== TOOL_MODES.BLOCK) {
       return;
     }
 
@@ -224,17 +226,19 @@ const BlockGrid = () => {
     }
   };
 
-  // Handle escape key to cancel interaction
+  // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         clearInteraction();
+      } else if (event.key === 'q' || event.key === 'Q') {
+        toggleToolActive();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [clearInteraction]);
+  }, [clearInteraction, toggleToolActive]);
 
   return (
     <group position={[0, 0, 0]}>
