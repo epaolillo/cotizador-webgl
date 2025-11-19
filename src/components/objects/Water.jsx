@@ -288,7 +288,7 @@ const Water = ({
   }, [waterColorRGB]);
 
   // Create pool walls with tiles texture
-  const wallHeight = 1.0; // Height of pool walls above water level
+  const wallHeight = 0.5; // Height of pool walls above water level (reduced from 1.0)
   const wallThickness = 0.1; // Thickness of walls
   const groundLevel = bounds ? bounds.y - 0.5 : 0; // Ground level (bottom of pool)
   const wallBottom = groundLevel; // Walls start from ground
