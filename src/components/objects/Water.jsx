@@ -1,9 +1,10 @@
 import React, { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { Box } from '@react-three/drei';
 import * as THREE from 'three';
 import { waterVertexShader, waterFragmentShader } from '../../shaders/waterShaders';
 import cloudTexture from '../../assets/fluffy-white-clouds-blue-sky.jpg';
+import tilesTexture from '../../assets/tiles.jpg';
 
 /**
  * Water Component - Reflective water surface for pools with animated waves
@@ -112,6 +113,18 @@ const Water = ({
 }) => {
   const surfaceRef = useRef();
   const envMapRef = useRef(null);
+  
+  // Load tiles texture for pool walls
+  const tilesTex = useLoader(THREE.TextureLoader, tilesTexture);
+  
+  // Configure tiles texture
+  const tilesTextureConfigured = useMemo(() => {
+    if (!tilesTex) return null;
+    tilesTex.wrapS = tilesTex.wrapT = THREE.RepeatWrapping;
+    tilesTex.repeat.set(2, 2); // Repeat pattern for better tile visibility
+    tilesTex.anisotropy = 16;
+    return tilesTex;
+  }, [tilesTex]);
   
   const waterColor = useMemo(() => {
     if (selected) return '#ff6b6b';
@@ -274,8 +287,86 @@ const Water = ({
     });
   }, [waterColorRGB]);
 
+  // Create pool walls with tiles texture
+  const wallHeight = 1.0; // Height of pool walls above water level
+  const wallThickness = 0.1; // Thickness of walls
+  const groundLevel = bounds ? bounds.y - 0.5 : 0; // Ground level (bottom of pool)
+  const wallBottom = groundLevel; // Walls start from ground
+  const wallTop = bounds ? bounds.y + wallHeight : wallHeight; // Top of walls
+  
+  // Create wall material with tiles texture
+  const wallMaterial = useMemo(() => {
+    if (!tilesTextureConfigured) return null;
+    
+    return new THREE.MeshStandardMaterial({
+      map: tilesTextureConfigured,
+      roughness: 0.7,
+      metalness: 0.1,
+      fog: true
+    });
+  }, [tilesTextureConfigured]);
+
   return (
     <group>
+      {/* Pool walls with tiles texture - extending from ground to top */}
+      {wallMaterial && bounds && (
+        <>
+          {/* North wall (positive Z) */}
+          <mesh
+            position={[bounds.centerX, (wallBottom + wallTop) / 2, bounds.maxZ + 0.5]}
+            rotation={[0, 0, 0]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[bounds.width, wallTop - wallBottom, wallThickness]} />
+            <primitive object={wallMaterial} attach="material" />
+          </mesh>
+          
+          {/* South wall (negative Z) */}
+          <mesh
+            position={[bounds.centerX, (wallBottom + wallTop) / 2, bounds.minZ - 0.5]}
+            rotation={[0, 0, 0]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[bounds.width, wallTop - wallBottom, wallThickness]} />
+            <primitive object={wallMaterial} attach="material" />
+          </mesh>
+          
+          {/* East wall (positive X) */}
+          <mesh
+            position={[bounds.maxX + 0.5, (wallBottom + wallTop) / 2, bounds.centerZ]}
+            rotation={[0, 0, 0]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[wallThickness, wallTop - wallBottom, bounds.depth]} />
+            <primitive object={wallMaterial} attach="material" />
+          </mesh>
+          
+          {/* West wall (negative X) */}
+          <mesh
+            position={[bounds.minX - 0.5, (wallBottom + wallTop) / 2, bounds.centerZ]}
+            rotation={[0, 0, 0]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[wallThickness, wallTop - wallBottom, bounds.depth]} />
+            <primitive object={wallMaterial} attach="material" />
+          </mesh>
+          
+          {/* Pool floor with tiles texture */}
+          <mesh
+            position={[bounds.centerX, groundLevel, bounds.centerZ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+          >
+            <planeGeometry args={[bounds.width, bounds.depth]} />
+            <primitive object={wallMaterial} attach="material" />
+          </mesh>
+        </>
+      )}
+      
       {/* Unified water body - single block covering entire pool */}
       {waterBodyGeometry && (
         <mesh
