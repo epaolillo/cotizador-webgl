@@ -9,6 +9,7 @@ const GrassGround = ({
   size = 20, 
   grassCount = 50000, 
   position = [0, -0.5, 0],
+  poolBlocks = [],
   ...props 
 }) => {
   const meshRef = useRef();
@@ -36,18 +37,58 @@ const GrassGround = ({
     return geometry;
   }, [size]);
 
-  // Create material
+  // Calculate pool bounds for grass exclusion (more efficient than individual positions)
+  const poolBounds = useMemo(() => {
+    const bounds = [];
+    poolBlocks.forEach(block => {
+      if (block.positions && block.positions.length > 0) {
+        let minX = Infinity, maxX = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        
+        block.positions.forEach(pos => {
+          minX = Math.min(minX, pos.x);
+          maxX = Math.max(maxX, pos.x);
+          minZ = Math.min(minZ, pos.z);
+          maxZ = Math.max(maxZ, pos.z);
+        });
+        
+        // Add small padding to ensure complete coverage
+        bounds.push({
+          minX: minX - 0.5,
+          maxX: maxX + 0.5,
+          minZ: minZ - 0.5,
+          maxZ: maxZ + 0.5
+        });
+      }
+    });
+    return bounds;
+  }, [poolBlocks]);
+
+  // Create material with pool exclusion
   const material = useMemo(() => {
+    // Flatten bounds into array for shader (max 20 pools)
+    const boundsArray = new Float32Array(80); // 20 pools * 4 values (minX, maxX, minZ, maxZ)
+    for (let i = 0; i < Math.min(poolBounds.length, 20); i++) {
+      const b = poolBounds[i];
+      boundsArray[i * 4 + 0] = b.minX;
+      boundsArray[i * 4 + 1] = b.maxX;
+      boundsArray[i * 4 + 2] = b.minZ;
+      boundsArray[i * 4 + 3] = b.maxZ;
+    }
+    
     return new THREE.ShaderMaterial({
       uniforms: {
         uCloud: { value: cloudTex },
-        uTime: { value: 0 }
+        uTime: { value: 0 },
+        uPoolBounds: { value: boundsArray },
+        uPoolCount: { value: Math.min(poolBounds.length, 20) },
+        uGrassOffset: { value: new THREE.Vector2(position[0], position[2]) }
       },
       side: THREE.DoubleSide,
       vertexShader,
       fragmentShader
     });
-  }, [cloudTex]);
+  }, [cloudTex, poolBounds, position]);
 
   // Animation loop
   useFrame(({ clock }) => {

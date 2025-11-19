@@ -355,13 +355,13 @@ const Water = ({
             <primitive object={wallMaterial} attach="material" />
           </mesh>
           
-          {/* Pool floor with tiles texture */}
+          {/* Pool floor with tiles texture - thicker upward to cover grass */}
           <mesh
-            position={[bounds.centerX, groundLevel, bounds.centerZ]}
-            rotation={[-Math.PI / 2, 0, 0]}
+            position={[bounds.centerX, groundLevel + 0.25, bounds.centerZ]}
             receiveShadow
+            castShadow
           >
-            <planeGeometry args={[bounds.width, bounds.depth]} />
+            <boxGeometry args={[bounds.width, 0.5, bounds.depth]} />
             <primitive object={wallMaterial} attach="material" />
           </mesh>
         </>

@@ -1,9 +1,13 @@
 export const vertexShader = /* glsl */ `
   uniform float uTime;
+  uniform vec2 uGrassOffset;
+  uniform float uPoolCount;
+  uniform float uPoolBounds[80]; // Max 20 pools * 4 values (minX, maxX, minZ, maxZ)
 
   varying vec3 vPosition;
   varying vec2 vUv;
   varying vec3 vNormal;
+  varying float vIsInPool;
 
   float wave(float waveSize, float tipDistance, float centerDistance) {
     // Tip is the fifth vertex drawn per blade
@@ -13,12 +17,37 @@ export const vertexShader = /* glsl */ `
     return sin((uTime / 500.0) + waveSize) * waveDistance;
   }
 
+  bool isPositionInPool(vec2 worldPos) {
+    // Check against all pool bounds
+    for (int i = 0; i < 20; i++) {
+      if (float(i) >= uPoolCount) break;
+      
+      float minX = uPoolBounds[i * 4 + 0];
+      float maxX = uPoolBounds[i * 4 + 1];
+      float minZ = uPoolBounds[i * 4 + 2];
+      float maxZ = uPoolBounds[i * 4 + 3];
+      
+      if (worldPos.x >= minX && worldPos.x <= maxX && 
+          worldPos.y >= minZ && worldPos.y <= maxZ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void main() {
     vPosition = position;
     vUv = uv;
     vNormal = normalize(normalMatrix * normal);
 
-    if (vPosition.y < 0.0) {
+    // Calculate world position for pool checking
+    vec2 worldPos = vec2(position.x + uGrassOffset.x, position.z + uGrassOffset.y);
+    vIsInPool = isPositionInPool(worldPos) ? 1.0 : 0.0;
+
+    // If in pool, make grass blade have zero height
+    if (vIsInPool > 0.5) {
+      vPosition.y = 0.0;
+    } else if (vPosition.y < 0.0) {
       vPosition.y = 0.0;
     } else {
       vPosition.x += wave(uv.x * 10.0, 0.3, 0.1);      
@@ -34,10 +63,16 @@ export const fragmentShader = /* glsl */ `
   varying vec3 vPosition;
   varying vec2 vUv;
   varying vec3 vNormal;
+  varying float vIsInPool;
 
   vec3 green = vec3(0.2, 0.6, 0.3);
 
   void main() {
+    // Don't render grass if it's in a pool
+    if (vIsInPool > 0.5) {
+      discard;
+    }
+
     vec3 color = mix(green * 0.7, green, vPosition.y);
     color = mix(color, texture2D(uCloud, vUv).rgb, 0.4);
 

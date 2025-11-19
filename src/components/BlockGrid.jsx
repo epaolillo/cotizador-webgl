@@ -132,7 +132,8 @@ const BlockGrid = () => {
     clearInteraction,
     selectedObjectType,
     toolActive,
-    toggleToolActive
+    toggleToolActive,
+    blocks
   } = useEditor();
   
   const { camera, raycaster } = useThree();
@@ -250,6 +251,7 @@ const BlockGrid = () => {
           size={GRID_SIZE}
           grassCount={90000}
           position={[(GRID_SIZE / 2) + 0.5, -0.5, (GRID_SIZE / 2) + 0.5]}
+          poolBlocks={blocks.filter(block => block.type && (block.type.id === 'pool' || block.type.id === 'water'))}
         />
 
       
