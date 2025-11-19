@@ -55,17 +55,21 @@ export const waterVertexShader = /* glsl */ `
     float timeInSeconds = uTime / 1000.0;
     
     // Calculate edge fade to keep waves within pool boundaries
-    // UV coordinates go from 0 to 1, we want to fade near edges
+    // UV coordinates go from 0 to 1, we want to fade near edges more aggressively
     float edgeFade = 1.0;
-    float edgeDistance = 0.05; // Distance from edge to start fading (5% of size)
+    float edgeDistance = 0.15; // Increased distance from edge to start fading (15% of size)
     
-    // Fade on all edges
+    // Fade on all edges - more aggressive fade
     float fadeX = min(uv.x / edgeDistance, (1.0 - uv.x) / edgeDistance);
     float fadeZ = min(uv.y / edgeDistance, (1.0 - uv.y) / edgeDistance);
     edgeFade = min(fadeX, fadeZ);
     edgeFade = clamp(edgeFade, 0.0, 1.0);
-    // Smooth fade curve
-    edgeFade = smoothstep(0.0, 1.0, edgeFade);
+    // More aggressive smooth fade curve - waves completely stop at edges
+    edgeFade = smoothstep(0.0, 0.3, edgeFade); // Changed from 1.0 to 0.3 for sharper cutoff
+    // Ensure waves are completely zero at the very edges
+    if (uv.x < 0.02 || uv.x > 0.98 || uv.y < 0.02 || uv.y > 0.98) {
+      edgeFade = 0.0;
+    }
     
     float dz = 0.0;
     float dzdx = 0.0;

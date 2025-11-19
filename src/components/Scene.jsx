@@ -89,7 +89,7 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
       {/* Camera controls - disabled during animation and block insertion */}
       <OrbitControls
         enablePan={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
-        enableZoom={false} // Zoom completely disabled
+        enableZoom={true} // Zoom enabled with mouse wheel
         enableRotate={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
         minDistance={5}
         maxDistance={150}
@@ -97,7 +97,7 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
         target={initialCameraTarget}
         panSpeed={0.8}
         rotateSpeed={0.8}
-        zoomSpeed={0} // Ensure zoom is disabled
+        zoomSpeed={1.0} // Zoom speed with mouse wheel
         makeDefault
       />
 
