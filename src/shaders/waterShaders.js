@@ -50,27 +50,8 @@ export const waterVertexShader = /* glsl */ `
 
   void main() {
     vUv = uv;
-    vPosition = position;
-    
-    float timeInSeconds = uTime / 1000.0;
-    
-    // Calculate edge fade to keep waves within pool boundaries
-    // UV coordinates go from 0 to 1, we want to fade near edges more aggressively
-    float edgeFade = 1.0;
-    float edgeDistance = 0.15; // Increased distance from edge to start fading (15% of size)
-    
-    // Fade on all edges - more aggressive fade
-    float fadeX = min(uv.x / edgeDistance, (1.0 - uv.x) / edgeDistance);
-    float fadeZ = min(uv.y / edgeDistance, (1.0 - uv.y) / edgeDistance);
-    edgeFade = min(fadeX, fadeZ);
-    edgeFade = clamp(edgeFade, 0.0, 1.0);
-    // More aggressive smooth fade curve - waves completely stop at edges
-    edgeFade = smoothstep(0.0, 0.3, edgeFade); // Changed from 1.0 to 0.3 for sharper cutoff
-    // Ensure waves are completely zero at the very edges
-    if (uv.x < 0.02 || uv.x > 0.98 || uv.y < 0.02 || uv.y > 0.98) {
-      edgeFade = 0.0;
-    }
-    
+    vPosition = vec3(modelMatrix * vec4(position, 1.0));
+
     float dz = 0.0;
     float dzdx = 0.0;
     float dzdy = 0.0;
@@ -79,9 +60,24 @@ export const waterVertexShader = /* glsl */ `
     float w = uFrequency;
     float lambda = uLambda;
 
-    // Multiple wave iterations with random directions
+    // Edge fade - EXTREMELY aggressive to prevent water from going through walls
+    // Waves must completely stop at edges - ONLY vertical movement (Y), NO horizontal movement
+    float edgeFade = 1.0;
+    float distFromEdgeX = min(uv.x, 1.0 - uv.x);
+    float distFromEdgeZ = min(uv.y, 1.0 - uv.y);
+    float minDist = min(distFromEdgeX, distFromEdgeZ);
+    
+    // Completely stop waves within 10% of edges
+    if (minDist < 0.10) {
+      edgeFade = 0.0;
+    }
+    // Very aggressive fade from 10% to 20% from edges
+    else if (minDist < 0.20) {
+      edgeFade = smoothstep(0.0, 0.10, minDist - 0.10);
+    }
+
     for (int i = 0; i < uIterations; i++) {
-      // Generate random direction for each wave using Simplex Noise
+      // Generate a random direction for the wave
       float angle = snoise(vec2(float(i), uRandom)) * 2.0 * PI;
       float kx = cos(angle);
       float ky = sin(angle);
@@ -91,18 +87,17 @@ export const waterVertexShader = /* glsl */ `
       kx *= k;
       ky *= k;
 
-      float phase = kx * position.x + ky * position.z - w * timeInSeconds;
+      // Use position.x and position.z (our plane is in XZ, not XY like threejs-water)
+      float phase = kx * position.x + ky * position.z - w * uTime;
       float sinPhase = sin(phase);
       float cosPhase = cos(phase);
       
-      // Apply edge fade to wave amplitude
+      // Apply edge fade to amplitude
       float waveAmplitude = a * edgeFade;
-      
       dz += waveAmplitude * sinPhase;
       dzdx += waveAmplitude * kx * cosPhase;
       dzdy += waveAmplitude * ky * cosPhase;
       
-      // Update parameters for next iteration
       a = a * uAmplitudeFactor;
       w = w * uFrequencyFactor;
       lambda *= uLambdaFactor;
@@ -112,13 +107,13 @@ export const waterVertexShader = /* glsl */ `
     vec3 x = vec3(1, 0, dzdx);
     vec3 y = vec3(0, 1, dzdy);
     vec3 n = normalize(cross(x, y));
-    vNormal = normalize(normalMatrix * n);
+    vNormal = mat3(modelMatrix) * n;
     
     vec3 newPosition = position;
     newPosition.y += dz;
     
     vDz = dz;
-    vWorldPosition = (modelMatrix * vec4(newPosition, 1.0)).xyz;
+    vWorldPosition = vec3(modelMatrix * vec4(newPosition, 1.0));
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
@@ -145,8 +140,8 @@ export const waterFragmentShader = /* glsl */ `
     vec3 n = normalize(gl_FrontFacing ? vNormal : -vNormal);
     vec3 viewDir = normalize(uCameraPosition - vWorldPosition);
     
-    // Adjust brightness according to wave height (caustics effect)
-    vec3 baseColor = color * clamp((vDz + uAmplitude) / (2.0 * uAmplitude), 0.4, 1.0);
+    // Adjust brightness according to height (caustics effect)
+    vec3 baseColor = color * clamp((vDz + uAmplitude) / (2.0 * uAmplitude), 0.5, 1.0);
     
     // Calculate reflection direction for environment mapping
     vec3 reflectDir = reflect(-viewDir, n);
@@ -156,7 +151,7 @@ export const waterFragmentShader = /* glsl */ `
     // Sample environment map for realistic reflections
     vec3 reflectedColor = texture(uEnvironmentMap, reflectDir).rgb;
     
-    // Enhanced Fresnel effect
+    // Fresnel effect
     float F0 = 0.04;
     float fresnel = F0 + (1.0 - F0) * pow(1.0 - dot(n, viewDir), 5.0);
     
@@ -166,21 +161,6 @@ export const waterFragmentShader = /* glsl */ `
     // Mix base color with reflected environment color based on fresnel
     vec3 finalColor = mix(baseColor, reflectedColor, fresnel);
     
-    // Add subtle specular highlights
-    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-    vec3 halfVector = normalize(lightDir + viewDir);
-    float specular = pow(max(dot(n, halfVector), 0.0), 128.0);
-    finalColor += specular * vec3(1.0, 1.0, 1.0) * 0.3;
-    
-    // Add subtle color variation based on wave height
-    float heightVariation = sin(vDz * 10.0 + uTime * 0.001) * 0.05;
-    finalColor += vec3(heightVariation * 0.1, heightVariation * 0.15, heightVariation * 0.08);
-    
-    // Reduce opacity near edges for smoother fade
-    float edgeAlpha = 1.0;
-    float edgeDist = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
-    edgeAlpha = smoothstep(0.0, 0.1, edgeDist);
-    
-    gl_FragColor = vec4(finalColor, uOpacity * edgeAlpha);
+    gl_FragColor = vec4(finalColor, uOpacity);
   }
 `;

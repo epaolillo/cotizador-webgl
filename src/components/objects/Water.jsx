@@ -1,109 +1,15 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Box } from '@react-three/drei';
 import * as THREE from 'three';
 import { waterVertexShader, waterFragmentShader } from '../../shaders/waterShaders';
+import { poolFloorVertexShader, poolFloorFragmentShader } from '../../shaders/poolFloorShaders';
 import cloudTexture from '../../assets/fluffy-white-clouds-blue-sky.jpg';
 import tilesTexture from '../../assets/tiles.jpg';
 
 /**
- * Water Component - Reflective water surface for pools with animated waves
- * Features:
- * - Animated water surface with wave shaders
- * - Turquoise reflective material
- * - Half height (0.5 units instead of 1.0)
- * - Receives shadows from other objects
- * - Solid body with animated top surface
- */
-const WaterUnit = ({ position, color = '#00CED1', opacity = 1.0, selected = false }) => {
-  const waterHeight = 0.5; // Half the height of normal blocks
-  const surfaceRef = useRef();
-  
-  // Adjust Y position to account for lower height
-  const adjustedPosition = [
-    position.x, 
-    position.y - 0.25, // Lower by 0.25 to keep bottom aligned with grid
-    position.z
-  ];
-
-  // Convert color hex to RGB
-  const waterColorRGB = useMemo(() => {
-    if (selected) {
-      return new THREE.Color('#ff6b6b');
-    }
-    return new THREE.Color(color);
-  }, [selected, color]);
-
-  // Create animated shader material for water surface
-  const waterMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uPosition: { value: new THREE.Vector2(position.x, position.z) },
-        uColor: { value: waterColorRGB },
-        uOpacity: { value: selected ? 0.9 : 0.85 },
-        uCameraPosition: { value: new THREE.Vector3() }
-      },
-      vertexShader: waterVertexShader,
-      fragmentShader: waterFragmentShader,
-      transparent: true,
-      side: THREE.DoubleSide,
-      fog: false // Disable fog for custom shader to avoid uniform conflicts
-    });
-  }, [waterColorRGB, position, selected]);
-
-  // Update time uniform for animation
-  useFrame(({ clock, camera }) => {
-    if (surfaceRef.current && surfaceRef.current.material.uniforms) {
-      const time = clock.getElapsedTime() * 1000; // Time in milliseconds
-      surfaceRef.current.material.uniforms.uTime.value = time;
-      surfaceRef.current.material.uniforms.uCameraPosition.value.copy(camera.position);
-    }
-  });
-
-  return (
-    <group>
-      {/* Solid water body - transparent turquoise */}
-      <Box 
-        position={adjustedPosition}
-        args={[1, waterHeight, 1]}
-        castShadow={false}
-        receiveShadow={true}
-      >
-        <meshPhysicalMaterial 
-          color={waterColorRGB}
-          transparent={true}
-          opacity={0.6}
-          roughness={0.1}
-          metalness={0.1}
-          clearcoat={0.3}
-          clearcoatRoughness={0.1}
-          transmission={0.3}
-          thickness={0.5}
-          envMapIntensity={1.5}
-          fog={true}
-          side={THREE.FrontSide}
-        />
-      </Box>
-
-      {/* Top animated reflective surface with wave shader */}
-      <mesh
-        ref={surfaceRef}
-        position={[position.x, position.y + 0.01, position.z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow={true}
-        castShadow={false}
-      >
-        <planeGeometry args={[1, 1, 64, 64]} />
-        <primitive object={waterMaterial} attach="material" />
-      </mesh>
-    </group>
-  );
-};
-
-/**
  * Water - Multi-position water component
  * Renders water blocks with a unified animated surface
+ * Only ONE shader material for the top animated surface
  */
 const Water = ({ 
   block, 
@@ -112,16 +18,16 @@ const Water = ({
   selected = false,
 }) => {
   const surfaceRef = useRef();
+  const floorRef = useRef();
   const envMapRef = useRef(null);
   
   // Load tiles texture for pool walls
   const tilesTex = useLoader(THREE.TextureLoader, tilesTexture);
   
-  // Configure tiles texture
-  const tilesTextureConfigured = useMemo(() => {
+  // Configure base tiles texture
+  const tilesTextureBase = useMemo(() => {
     if (!tilesTex) return null;
     tilesTex.wrapS = tilesTex.wrapT = THREE.RepeatWrapping;
-    tilesTex.repeat.set(2, 2); // Repeat pattern for better tile visibility
     tilesTex.anisotropy = 16;
     return tilesTex;
   }, [tilesTex]);
@@ -219,15 +125,16 @@ const Water = ({
         uOpacity: { value: selected ? 0.6 : 0.5 }, // More transparent surface
         uCameraPosition: { value: new THREE.Vector3() },
         uEnvironmentMap: { value: envMapRef.current || null }, // Environment map for reflections
-        // Advanced wave parameters
-        uAmplitude: { value: 0.15 }, // Base wave amplitude
-        uAmplitudeFactor: { value: 0.85 }, // Amplitude reduction per iteration
-        uFrequency: { value: 0.8 }, // Base wave frequency
-        uFrequencyFactor: { value: 1.15 }, // Frequency increase per iteration
-        uLambda: { value: 8.0 }, // Base wavelength
-        uLambdaFactor: { value: 0.9 }, // Wavelength reduction per iteration
-        uIterations: { value: 12 }, // Number of wave iterations
-        uRandom: { value: Math.random() } // Random seed for wave directions
+        // Wave parameters - matching threejs-water defaults, scaled for pool
+        // Wave parameters - simulating gentle wind effect on pool
+        uAmplitude: { value: 0.1 }, // Olas más sutiles (reducido de 0.3)
+        uAmplitudeFactor: { value: 0.9 }, // Mantener igual
+        uFrequency: { value: 0.5 }, // Movimiento más lento (reducido de 0.5)
+        uFrequencyFactor: { value: 0.8 }, // Mantener igual
+        uLambda: { value: 20.0 }, // Olas más separadas (aumentado de 8.0)
+        uLambdaFactor: { value: 0.85 }, // Mantener similar
+        uIterations: { value: 8 }, // Menos ondas superpuestas (reducido de 18)
+        uRandom: { value: Math.random() }
       },
       vertexShader: waterVertexShader,
       fragmentShader: waterFragmentShader,
@@ -240,52 +147,34 @@ const Water = ({
 
   // Update time uniform for animation
   useFrame(({ clock, camera }) => {
+    const time = clock.getElapsedTime(); // Time in seconds
+    
+    // Update water surface
     if (surfaceRef.current && surfaceRef.current.material && surfaceRef.current.material.uniforms) {
-      const time = clock.getElapsedTime() * 1000; // Time in milliseconds
       surfaceRef.current.material.uniforms.uTime.value = time;
       surfaceRef.current.material.uniforms.uCameraPosition.value.copy(camera.position);
+    }
+    
+    // Update floor caustics
+    if (floorRef.current && floorRef.current.material && floorRef.current.material.uniforms) {
+      floorRef.current.material.uniforms.uTime.value = time;
     }
   });
 
   if (!bounds || !waterMaterial) return null;
 
   // Create geometry for unified surface with high resolution
+  // Make it slightly smaller than pool bounds to prevent water from going through walls
   const surfaceGeometry = useMemo(() => {
     // Higher resolution for better wave quality
     const segmentsX = Math.max(128, Math.floor(bounds.width * 32));
     const segmentsZ = Math.max(128, Math.floor(bounds.depth * 32));
-    return new THREE.PlaneGeometry(bounds.width, bounds.depth, segmentsX, segmentsZ);
+    // Reduce size by 0.1 units on each side to ensure water stays within bounds
+    const surfaceWidth = Math.max(0.1, bounds.width - 0.1);
+    const surfaceDepth = Math.max(0.1, bounds.depth - 0.1);
+    return new THREE.PlaneGeometry(surfaceWidth, surfaceDepth, segmentsX, segmentsZ);
   }, [bounds]);
 
-  // Create unified water body geometry (no individual blocks)
-  const waterBodyGeometry = useMemo(() => {
-    if (!bounds) return null;
-    // Create a box that covers the entire pool area
-    const geometry = new THREE.BoxGeometry(
-      bounds.width, 
-      0.5, // Water height
-      bounds.depth
-    );
-    return geometry;
-  }, [bounds]);
-
-  // Create unified water body material
-  const waterBodyMaterial = useMemo(() => {
-    return new THREE.MeshPhysicalMaterial({
-      color: waterColorRGB,
-      transparent: true,
-      opacity: 0.4, // More transparent to reduce visibility of divisions
-      roughness: 0.05,
-      metalness: 0.05,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.05,
-      transmission: 0.8, // Higher transmission for more transparency
-      thickness: 0.5,
-      envMapIntensity: 1.5,
-      fog: true,
-      side: THREE.DoubleSide
-    });
-  }, [waterColorRGB]);
 
   // Create pool walls with tiles texture
   const wallHeight = 0.5; // Height of pool walls above water level (reduced from 1.0)
@@ -294,22 +183,71 @@ const Water = ({
   const wallBottom = groundLevel; // Walls start from ground
   const wallTop = bounds ? bounds.y + wallHeight : wallHeight; // Top of walls
   
-  // Create wall material with tiles texture
-  const wallMaterial = useMemo(() => {
-    if (!tilesTextureConfigured) return null;
+  // Calculate tile size based on floor dimensions (floor uses repeat 2,2)
+  // Floor has dimensions bounds.width x bounds.depth with repeat (2, 2)
+  // So each tile is bounds.width/2 x bounds.depth/2
+  // Use average tile size to keep tiles square on all surfaces
+  const tileSizeX = bounds ? bounds.width / 2 : 1;
+  const tileSizeZ = bounds ? bounds.depth / 2 : 1;
+  const avgTileSize = (tileSizeX + tileSizeZ) / 2;
+  const wallHeightTotal = wallTop - wallBottom;
+  
+  // Create floor material with tiles texture and caustics shader
+  const floorMaterial = useMemo(() => {
+    if (!tilesTextureBase) return null;
+    
+    const floorTex = tilesTextureBase.clone();
+    floorTex.repeat.set(2, 2); // Tile repeat
+    
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: floorTex },
+        uTime: { value: 0 }
+      },
+      vertexShader: poolFloorVertexShader,
+      fragmentShader: poolFloorFragmentShader
+    });
+  }, [tilesTextureBase]);
+  
+  // Create materials for different wall types with adjusted repeat
+  // North/South walls: width = bounds.width, height = wallHeightTotal
+  const northSouthWallMaterial = useMemo(() => {
+    if (!tilesTextureBase || !bounds) return null;
+    
+    const wallTex = tilesTextureBase.clone();
+    const horizontalRepeat = bounds.width / avgTileSize;
+    const verticalRepeat = wallHeightTotal / avgTileSize;
+    wallTex.repeat.set(horizontalRepeat, verticalRepeat);
     
     return new THREE.MeshStandardMaterial({
-      map: tilesTextureConfigured,
+      map: wallTex,
       roughness: 0.7,
       metalness: 0.1,
       fog: true
     });
-  }, [tilesTextureConfigured]);
+  }, [tilesTextureBase, bounds, wallHeightTotal, avgTileSize]);
+  
+  // East/West walls: width = bounds.depth, height = wallHeightTotal
+  const eastWestWallMaterial = useMemo(() => {
+    if (!tilesTextureBase || !bounds) return null;
+    
+    const wallTex = tilesTextureBase.clone();
+    const horizontalRepeat = bounds.depth / avgTileSize;
+    const verticalRepeat = wallHeightTotal / avgTileSize;
+    wallTex.repeat.set(horizontalRepeat, verticalRepeat);
+    
+    return new THREE.MeshStandardMaterial({
+      map: wallTex,
+      roughness: 0.7,
+      metalness: 0.1,
+      fog: true
+    });
+  }, [tilesTextureBase, bounds, wallHeightTotal, avgTileSize]);
 
   return (
     <group>
       {/* Pool walls with tiles texture - extending from ground to top */}
-      {wallMaterial && bounds && (
+      {northSouthWallMaterial && eastWestWallMaterial && bounds && (
         <>
           {/* North wall (positive Z) */}
           <mesh
@@ -319,7 +257,7 @@ const Water = ({
             receiveShadow
           >
             <boxGeometry args={[bounds.width, wallTop - wallBottom, wallThickness]} />
-            <primitive object={wallMaterial} attach="material" />
+            <primitive object={northSouthWallMaterial} attach="material" />
           </mesh>
           
           {/* South wall (negative Z) */}
@@ -330,7 +268,7 @@ const Water = ({
             receiveShadow
           >
             <boxGeometry args={[bounds.width, wallTop - wallBottom, wallThickness]} />
-            <primitive object={wallMaterial} attach="material" />
+            <primitive object={northSouthWallMaterial} attach="material" />
           </mesh>
           
           {/* East wall (positive X) */}
@@ -341,7 +279,7 @@ const Water = ({
             receiveShadow
           >
             <boxGeometry args={[wallThickness, wallTop - wallBottom, bounds.depth]} />
-            <primitive object={wallMaterial} attach="material" />
+            <primitive object={eastWestWallMaterial} attach="material" />
           </mesh>
           
           {/* West wall (negative X) */}
@@ -352,41 +290,32 @@ const Water = ({
             receiveShadow
           >
             <boxGeometry args={[wallThickness, wallTop - wallBottom, bounds.depth]} />
-            <primitive object={wallMaterial} attach="material" />
+            <primitive object={eastWestWallMaterial} attach="material" />
           </mesh>
           
-          {/* Pool floor with tiles texture - thicker upward to cover grass */}
+          {/* Pool floor with tiles texture and animated caustics */}
           <mesh
+            ref={floorRef}
             position={[bounds.centerX, groundLevel + 0.25, bounds.centerZ]}
             receiveShadow
             castShadow
           >
             <boxGeometry args={[bounds.width, 0.5, bounds.depth]} />
-            <primitive object={wallMaterial} attach="material" />
+            <primitive object={floorMaterial} attach="material" />
           </mesh>
         </>
       )}
       
-      {/* Unified water body - single block covering entire pool */}
-      {waterBodyGeometry && (
-        <mesh
-          position={[bounds.centerX, bounds.y - 0.25, bounds.centerZ]}
-          geometry={waterBodyGeometry}
-          material={waterBodyMaterial}
-          castShadow={false}
-          receiveShadow={true}
-        />
-      )}
-      
-      {/* Unified animated surface covering entire pool */}
+      {/* Unified animated surface covering entire pool - ONLY ONE SHADER SURFACE */}
       <mesh
         ref={surfaceRef}
-        position={[bounds.centerX, bounds.y + 0.01, bounds.centerZ]}
+        position={[bounds.centerX, bounds.y + 0.30, bounds.centerZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow={true}
         castShadow={false}
         geometry={surfaceGeometry}
         material={waterMaterial}
+        renderOrder={1}
       />
     </group>
   );
