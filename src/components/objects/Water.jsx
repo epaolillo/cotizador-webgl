@@ -122,18 +122,16 @@ const Water = ({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: waterColorRGB },
-        uOpacity: { value: selected ? 0.6 : 0.5 }, // More transparent surface
-        uCameraPosition: { value: new THREE.Vector3() },
+        uOpacity: { value: 0.8 }, // Matching threejs-water opacity
         uEnvironmentMap: { value: envMapRef.current || null }, // Environment map for reflections
-        // Wave parameters - matching threejs-water defaults, scaled for pool
-        // Wave parameters - simulating gentle wind effect on pool
-        uAmplitude: { value: 0.1 }, // Olas más sutiles (reducido de 0.3)
-        uAmplitudeFactor: { value: 0.9 }, // Mantener igual
-        uFrequency: { value: 0.5 }, // Movimiento más lento (reducido de 0.5)
-        uFrequencyFactor: { value: 0.8 }, // Mantener igual
-        uLambda: { value: 20.0 }, // Olas más separadas (aumentado de 8.0)
-        uLambdaFactor: { value: 0.85 }, // Mantener similar
-        uIterations: { value: 8 }, // Menos ondas superpuestas (reducido de 18)
+        // Wave parameters - gentle pool water movement
+        uAmplitude: { value: 0.05 }, // Olas más sutiles para pileta
+        uAmplitudeFactor: { value: 0.8 },
+        uFrequency: { value: 0.3 }, // Movimiento más lento
+        uFrequencyFactor: { value: 1.2 },
+        uLambda: { value: 3.0 }, // Longitud de onda para pileta
+        uLambdaFactor: { value: 0.8 },
+        uIterations: { value: 12 }, // Menos iteraciones para efecto más suave
         uRandom: { value: Math.random() }
       },
       vertexShader: waterVertexShader,
@@ -146,13 +144,12 @@ const Water = ({
   }, [waterColorRGB, bounds, selected]);
 
   // Update time uniform for animation
-  useFrame(({ clock, camera }) => {
+  useFrame(({ clock }) => {
     const time = clock.getElapsedTime(); // Time in seconds
     
     // Update water surface
     if (surfaceRef.current && surfaceRef.current.material && surfaceRef.current.material.uniforms) {
       surfaceRef.current.material.uniforms.uTime.value = time;
-      surfaceRef.current.material.uniforms.uCameraPosition.value.copy(camera.position);
     }
     
     // Update floor caustics
@@ -163,15 +160,14 @@ const Water = ({
 
   if (!bounds || !waterMaterial) return null;
 
-  // Create geometry for unified surface with high resolution
-  // Make it slightly smaller than pool bounds to prevent water from going through walls
+  // Create geometry for unified surface with high resolution (matching threejs-water)
   const surfaceGeometry = useMemo(() => {
-    // Higher resolution for better wave quality
-    const segmentsX = Math.max(128, Math.floor(bounds.width * 32));
-    const segmentsZ = Math.max(128, Math.floor(bounds.depth * 32));
-    // Reduce size by 0.1 units on each side to ensure water stays within bounds
-    const surfaceWidth = Math.max(0.1, bounds.width - 0.1);
-    const surfaceDepth = Math.max(0.1, bounds.depth - 0.1);
+    // Very high resolution like threejs-water (512x512 for 100x100 plane = ~5 segments per unit)
+    const segmentsX = Math.max(256, Math.floor(bounds.width * 50));
+    const segmentsZ = Math.max(256, Math.floor(bounds.depth * 50));
+    // Use full pool size (water fills the entire pool)
+    const surfaceWidth = bounds.width;
+    const surfaceDepth = bounds.depth;
     return new THREE.PlaneGeometry(surfaceWidth, surfaceDepth, segmentsX, segmentsZ);
   }, [bounds]);
 

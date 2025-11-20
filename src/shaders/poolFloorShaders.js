@@ -91,11 +91,11 @@ export const poolFloorFragmentShader = /* glsl */ `
   }
   
   void main() {
-    // Caustics parameters
-    float intensity = 0.25;      // Light intensity
-    float density = 8.0;         // Pattern density (scaled for pool)
-    float speed = 0.4;           // Movement speed
-    float width = 0.2;           // Line width
+    // Caustics parameters - very soft and subtle
+    float intensity = 0.08;      // Light intensity (muy suave)
+    float density = 5.0;         // Pattern density (más espaciado)
+    float speed = 0.25;          // Movement speed (más lento)
+    float width = 0.4;           // Line width (muy difuso)
     vec3 causticsColor = vec3(1.0);
     
     // Two caustics layers for more realistic effect
@@ -105,7 +105,7 @@ export const poolFloorFragmentShader = /* glsl */ `
     float noise2 = 1.0 - abs(sin(snoise(vec3(vUv.yx * density, uTime * speed))));
     noise2 = smoothstep(1.0 - width, 1.0 + width, noise2);
   
-    float noise = noise1 + noise2;
+    float noise = (noise1 + noise2) * 0.6;
   
     // Sample tile texture
     vec4 texColor = texture(uTexture, vUv);
