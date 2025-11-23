@@ -40,6 +40,7 @@ const GrassGround = ({
   // Calculate pool bounds for grass exclusion (more efficient than individual positions)
   const poolBounds = useMemo(() => {
     const bounds = [];
+    const borderPadding = 0.8; // Ancho del borde antideslizante
     poolBlocks.forEach(block => {
       if (block.positions && block.positions.length > 0) {
         let minX = Infinity, maxX = -Infinity;
@@ -52,12 +53,12 @@ const GrassGround = ({
           maxZ = Math.max(maxZ, pos.z);
         });
         
-        // Add small padding to ensure complete coverage
+        // Add padding for walls + antideslizante border
         bounds.push({
-          minX: minX - 0.5,
-          maxX: maxX + 0.5,
-          minZ: minZ - 0.5,
-          maxZ: maxZ + 0.5
+          minX: minX - 0.5 - borderPadding,
+          maxX: maxX + 0.5 + borderPadding,
+          minZ: minZ - 0.5 - borderPadding,
+          maxZ: maxZ + 0.5 + borderPadding
         });
       }
     });

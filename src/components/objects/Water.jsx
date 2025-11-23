@@ -177,9 +177,10 @@ const Water = ({
 
 
   // Create pool walls with tiles texture
-  const wallHeight = 0.5; // Height of pool walls above water level (reduced from 1.0)
+  const poolDepth = 0.8; // Profundidad de la pileta (qué tan enterrada está)
+  const wallHeight = -0.2 // Height of pool walls above water level
   const wallThickness = 0.1; // Thickness of walls
-  const groundLevel = bounds ? bounds.y - 0.5 : 0; // Ground level (bottom of pool)
+  const groundLevel = bounds ? bounds.y - poolDepth : 0.01; // Ground level (bottom of pool)
   const wallBottom = groundLevel; // Walls start from ground
   const wallTop = bounds ? bounds.y + wallHeight : wallHeight; // Top of walls
   
@@ -243,6 +244,56 @@ const Water = ({
       fog: true
     });
   }, [tilesTextureBase, bounds, wallHeightTotal, avgTileSize]);
+  
+  // Antideslizante border material (same tiles texture for the border around pool)
+  const borderWidth = 0.8; // Ancho del borde antideslizante en metros
+  const borderHeight = 0.05; // Grosor del borde antideslizante
+  
+  // Material para bordes Norte/Sur (horizontal largo)
+  const borderNorthSouthMaterial = useMemo(() => {
+    if (!tilesTextureBase || !bounds) return null;
+    
+    const borderTex = tilesTextureBase.clone();
+    
+    // El piso tiene repeat (2, 2) sobre (bounds.width, bounds.depth)
+    // Tamaño de baldosa = bounds.width / 2
+    const tileSize = bounds.width / 2;
+    
+    // Dimensiones del borde Norte/Sur: (bounds.width + borderWidth * 2) x borderWidth
+    const repeatX = (bounds.width + borderWidth * 2) / tileSize;
+    const repeatY = borderWidth / tileSize;
+    
+    borderTex.repeat.set(repeatX, repeatY);
+    
+    return new THREE.MeshStandardMaterial({
+      map: borderTex,
+      roughness: 0.8,
+      metalness: 0.05,
+      fog: true
+    });
+  }, [tilesTextureBase, bounds]);
+  
+  // Material para bordes Este/Oeste (vertical)
+  const borderEastWestMaterial = useMemo(() => {
+    if (!tilesTextureBase || !bounds) return null;
+    
+    const borderTex = tilesTextureBase.clone();
+    
+    const tileSize = bounds.width / 2;
+    
+    // Dimensiones del borde Este/Oeste: borderWidth x bounds.depth
+    const repeatX = borderWidth / tileSize;
+    const repeatY = bounds.depth / tileSize;
+    
+    borderTex.repeat.set(repeatX, repeatY);
+    
+    return new THREE.MeshStandardMaterial({
+      map: borderTex,
+      roughness: 0.8,
+      metalness: 0.05,
+      fog: true
+    });
+  }, [tilesTextureBase, bounds]);
 
   return (
     <group>
@@ -300,16 +351,61 @@ const Water = ({
             receiveShadow
             castShadow
           >
-            <boxGeometry args={[bounds.width, 0.5, bounds.depth]} />
+            <boxGeometry args={[bounds.width, 0.11, bounds.depth]} />
             <primitive object={floorMaterial} attach="material" />
           </mesh>
+          
+          {/* Antideslizante border - 4 rectangles around the pool at ground level */}
+          {borderNorthSouthMaterial && borderEastWestMaterial && (
+            <>
+              {/* North border (positive Z) */}
+              <mesh
+                position={[bounds.centerX, wallTop, bounds.maxZ + 0.4 + borderWidth/2]}
+                receiveShadow
+                castShadow
+              >
+                <boxGeometry args={[bounds.width + borderWidth * 1.75, borderHeight, borderWidth]} />
+                <primitive object={borderNorthSouthMaterial} attach="material" />
+              </mesh>
+              
+              {/* South border (negative Z) */}
+              <mesh
+                position={[bounds.centerX, wallTop, bounds.minZ - 0.4 - borderWidth/2]}
+                receiveShadow
+                castShadow
+              >
+                <boxGeometry args={[bounds.width + borderWidth * 1.75, borderHeight, borderWidth]} />
+                <primitive object={borderNorthSouthMaterial} attach="material" />
+              </mesh>
+              
+              {/* East border (positive X) */}
+              <mesh
+                position={[bounds.maxX + 0.4 + borderWidth/2, wallTop, bounds.centerZ]}
+                receiveShadow
+                castShadow
+              >
+                <boxGeometry args={[borderWidth, borderHeight, bounds.depth - borderWidth * 0.25]} />
+                <primitive object={borderEastWestMaterial} attach="material" />
+              </mesh>
+              
+              {/* West border (negative X) */}
+              <mesh
+                position={[bounds.minX - 0.4 - borderWidth/2, wallTop, bounds.centerZ]}
+                receiveShadow
+                castShadow
+              >
+                <boxGeometry args={[borderWidth, borderHeight, bounds.depth - borderWidth * 0.25]} />
+                <primitive object={borderEastWestMaterial} attach="material" />
+              </mesh>
+            </>
+          )}
         </>
       )}
       
       {/* Unified animated surface covering entire pool - ONLY ONE SHADER SURFACE */}
       <mesh
         ref={surfaceRef}
-        position={[bounds.centerX, bounds.y + 0.30, bounds.centerZ]}
+        position={[bounds.centerX, bounds.y - 0.2, bounds.centerZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow={true}
         castShadow={false}
