@@ -10,6 +10,8 @@ const CursorPreview = () => {
     INTERACTION_MODES,
     getPreviewPositions,
     isPositionOccupiedByBlocks,
+    isPositionTooCloseToEdge,
+    isPositionOnPoolBorder,
     selectedObjectType,
     toolActive
   } = useEditor();
@@ -31,10 +33,20 @@ const CursorPreview = () => {
   const hasOverlap = useMemo(() => {
     return previewPositions.some(pos => isPositionOccupiedByBlocks(pos));
   }, [previewPositions, isPositionOccupiedByBlocks]);
+  
+  // Determine if any preview position is too close to terrain edge
+  const isTooCloseToEdge = useMemo(() => {
+    return previewPositions.some(pos => isPositionTooCloseToEdge(pos));
+  }, [previewPositions, isPositionTooCloseToEdge]);
+
+  // Determine if any preview position is on a pool border
+  const isOnPoolBorder = useMemo(() => {
+    return previewPositions.some(pos => isPositionOnPoolBorder(pos));
+  }, [previewPositions, isPositionOnPoolBorder]);
 
   // Color based on state
   const previewColor = useMemo(() => {
-    if (hasOverlap) return '#ff4444'; // Red for invalid placement
+    if (hasOverlap || isTooCloseToEdge || isOnPoolBorder) return '#ff4444'; // Red for invalid placement
     
     // For unique objects, always show the object's color
     if (selectedObjectType && selectedObjectType.unique) {
@@ -47,12 +59,12 @@ const CursorPreview = () => {
       return selectedObjectType.color;
     }
     return '#ffaa44'; // Orange for first click
-  }, [hasOverlap, interactionMode, INTERACTION_MODES, selectedObjectType]);
+  }, [hasOverlap, isTooCloseToEdge, isOnPoolBorder, interactionMode, INTERACTION_MODES, selectedObjectType]);
 
   const previewOpacity = useMemo(() => {
-    if (hasOverlap) return 0.3;
+    if (hasOverlap || isTooCloseToEdge || isOnPoolBorder) return 0.3;
     return 0.6;
-  }, [hasOverlap]);
+  }, [hasOverlap, isTooCloseToEdge, isOnPoolBorder]);
 
   if (previewPositions.length === 0) {
     return null;

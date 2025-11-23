@@ -6,6 +6,7 @@ const ACTIONS = {
   SET_FIRST_CLICK: 'SET_FIRST_CLICK',
   ADD_BLOCK: 'ADD_BLOCK',
   CLEAR_BLOCKS: 'CLEAR_BLOCKS',
+  UNDO_LAST_BLOCK: 'UNDO_LAST_BLOCK',
   SET_INTERACTION_MODE: 'SET_INTERACTION_MODE',
   CLEAR_INTERACTION: 'CLEAR_INTERACTION',
   SET_TOOL_MODE: 'SET_TOOL_MODE',
@@ -125,6 +126,7 @@ const initialState = {
   toolMode: TOOL_MODES.BLOCK,
   selectedObjectType: OBJECT_TYPES.BLOCK,
   toolActive: true, // Tool is active by default
+  invalidPlacementReason: null, // Reason why current position is invalid
   fogSettings: {
     enabled: true,
     color: '#ffffff', // White fog color
@@ -185,31 +187,193 @@ const wouldCauseOverlap = (start, end, existingBlocks) => {
   return newPositions.some(pos => isPositionOccupied(pos, existingBlocks));
 };
 
+// Terrain constants
+const TERRAIN_MIN = 0.5;
+const TERRAIN_MAX = 20.5;
+const POOL_EDGE_MARGIN = 1; // Margen de 1 bloque para que quepa el antideslizante
+
+// Calculate the bounding box for a pool block
+const getPoolBounds = (block) => {
+  if (!block || !block.positions || block.positions.length === 0) {
+    return null;
+  }
+
+  const positions = block.positions;
+  const xs = positions.map(p => p.x);
+  const zs = positions.map(p => p.z);
+
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minZ: Math.min(...zs),
+    maxZ: Math.max(...zs)
+  };
+};
+
+// Calculate the anti-slip border area for a pool block
+// This matches the actual border dimensions from Water.jsx:
+// - borderWidth = 0.8
+// - borderOffset = 0.4
+// - Border extends approximately 1.2 units beyond pool edges
+const getPoolBorderArea = (block) => {
+  const bounds = getPoolBounds(block);
+  if (!bounds) return null;
+
+  // The anti-slip border extends approximately 1.2 units beyond the pool edges
+  // This accounts for borderOffset (0.4) + borderWidth (0.8)
+  const borderExtension = 1.2;
+  
+  return {
+    minX: bounds.minX - borderExtension,
+    maxX: bounds.maxX + borderExtension,
+    minZ: bounds.minZ - borderExtension,
+    maxZ: bounds.maxZ + borderExtension
+  };
+};
+
+// Check if a position (block center) intersects with a pool's anti-slip border
+const isPositionOnPoolBorder = (position, blocks) => {
+  return blocks.some(block => {
+    // Only check pool blocks
+    if (!block.type || block.type.id !== 'pool') return false;
+
+    const borderArea = getPoolBorderArea(block);
+    if (!borderArea) return false;
+
+    // A block at position (x, z) occupies space from (x-0.5, z-0.5) to (x+0.5, z+0.5)
+    // Check if this block intersects with the border area
+    const blockMinX = position.x - 0.5;
+    const blockMaxX = position.x + 0.5;
+    const blockMinZ = position.z - 0.5;
+    const blockMaxZ = position.z + 0.5;
+    
+    // Check if block intersects with border area
+    const intersectsX = blockMaxX >= borderArea.minX && blockMinX <= borderArea.maxX;
+    const intersectsZ = blockMaxZ >= borderArea.minZ && blockMinZ <= borderArea.maxZ;
+    
+    // Now check if it's actually on the border (not inside the pool itself)
+    const poolBounds = getPoolBounds(block);
+    if (!poolBounds) return false;
+    
+    // A position is on the border if it intersects the border area but not the pool interior
+    // Pool interior extends from minX-0.5 to maxX+0.5 (accounting for block size)
+    const poolInteriorMinX = poolBounds.minX - 0.5;
+    const poolInteriorMaxX = poolBounds.maxX + 0.5;
+    const poolInteriorMinZ = poolBounds.minZ - 0.5;
+    const poolInteriorMaxZ = poolBounds.maxZ + 0.5;
+    
+    const insidePool = blockMinX >= poolInteriorMinX && 
+                       blockMaxX <= poolInteriorMaxX && 
+                       blockMinZ >= poolInteriorMinZ && 
+                       blockMaxZ <= poolInteriorMaxZ;
+    
+    // Return true if intersects border area but not completely inside pool
+    return intersectsX && intersectsZ && !insidePool;
+  });
+};
+
+// Check if a position is too close to terrain edge for pool placement
+const isPositionTooCloseToEdge = (position, objectType) => {
+  // Only check for pool objects
+  if (objectType.id !== 'pool') return false;
+  
+  // Check if position is within valid area (at least 1 block away from edges)
+  return position.x <= TERRAIN_MIN + POOL_EDGE_MARGIN ||
+         position.x >= TERRAIN_MAX - POOL_EDGE_MARGIN ||
+         position.z <= TERRAIN_MIN + POOL_EDGE_MARGIN ||
+         position.z >= TERRAIN_MAX - POOL_EDGE_MARGIN;
+};
+
 // Reducer
 const editorReducer = (state, action) => {
   switch (action.type) {
-    case ACTIONS.SET_PREVIEW_POSITION:
+    case ACTIONS.SET_PREVIEW_POSITION: {
+      const position = action.payload;
+      let reason = null;
+      
+      if (position) {
+        // Check various invalid conditions in order of priority
+        if (isPositionOccupied(position, state.blocks)) {
+          reason = 'occupied';
+        } else if (isPositionTooCloseToEdge(position, state.selectedObjectType)) {
+          reason = 'tooCloseToEdge';
+        } else if (isPositionOnPoolBorder(position, state.blocks)) {
+          reason = 'onPoolBorder';
+        }
+      }
+      
       return {
         ...state,
-        previewPosition: action.payload
+        previewPosition: position,
+        invalidPlacementReason: reason
       };
+    }
 
-    case ACTIONS.SET_FIRST_CLICK:
+    case ACTIONS.SET_FIRST_CLICK: {
+      const position = action.payload;
+      
+      // Don't allow first click if pool is too close to edge
+      if (isPositionTooCloseToEdge(position, state.selectedObjectType)) {
+        console.warn('No se puede colocar la pileta tan cerca del borde del terreno');
+        return state; // Don't set first click
+      }
+
+      // Don't allow placement on pool borders
+      if (isPositionOnPoolBorder(position, state.blocks)) {
+        console.warn('No se puede colocar bloques sobre los antideslizantes de las piletas');
+        return state; // Don't set first click
+      }
+      
       return {
         ...state,
-        firstClickPosition: action.payload,
-        interactionMode: INTERACTION_MODES.PLACING_SECOND
+        firstClickPosition: position,
+        interactionMode: INTERACTION_MODES.PLACING_SECOND,
+        invalidPlacementReason: null
       };
+    }
 
     case ACTIONS.ADD_BLOCK: {
       const { start, end } = action.payload;
       
       // Check for overlaps
       if (wouldCauseOverlap(start, end, state.blocks)) {
+        console.warn('Esta posición está ocupada');
         return state; // Don't add block if it would overlap
       }
-
+      
+      // Check if any position in the pool area is too close to edge
       const positions = generateBlockPositions(start, end);
+      const tooCloseToEdge = positions.some(pos => 
+        isPositionTooCloseToEdge(pos, state.selectedObjectType)
+      );
+      
+      if (tooCloseToEdge) {
+        console.warn('La pileta no puede estar tan cerca del borde (necesita al menos 1 bloque de separación)');
+        return {
+          ...state,
+          firstClickPosition: null,
+          interactionMode: INTERACTION_MODES.NONE,
+          previewPosition: null,
+          invalidPlacementReason: null
+        };
+      }
+
+      // Check if any position is on a pool border
+      const onPoolBorder = positions.some(pos => 
+        isPositionOnPoolBorder(pos, state.blocks)
+      );
+
+      if (onPoolBorder) {
+        console.warn('No se puede colocar bloques sobre los antideslizantes de las piletas');
+        return {
+          ...state,
+          firstClickPosition: null,
+          interactionMode: INTERACTION_MODES.NONE,
+          previewPosition: null,
+          invalidPlacementReason: null
+        };
+      }
+
       const newBlock = {
         id: `${state.selectedObjectType.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         positions,
@@ -224,7 +388,8 @@ const editorReducer = (state, action) => {
         blocks: [...state.blocks, newBlock],
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
-        previewPosition: null
+        previewPosition: null,
+        invalidPlacementReason: null
       };
     }
 
@@ -237,6 +402,20 @@ const editorReducer = (state, action) => {
         previewPosition: null
       };
 
+    case ACTIONS.UNDO_LAST_BLOCK: {
+      if (state.blocks.length === 0) {
+        return state; // Nothing to undo
+      }
+      
+      // Remove the last block (most recently added)
+      const newBlocks = state.blocks.slice(0, -1);
+      
+      return {
+        ...state,
+        blocks: newBlocks
+      };
+    }
+
     case ACTIONS.SET_INTERACTION_MODE:
       return {
         ...state,
@@ -248,7 +427,8 @@ const editorReducer = (state, action) => {
         ...state,
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
-        previewPosition: null
+        previewPosition: null,
+        invalidPlacementReason: null
       };
 
     case ACTIONS.SET_TOOL_MODE:
@@ -258,7 +438,8 @@ const editorReducer = (state, action) => {
         // Clear interaction when switching tools
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
-        previewPosition: null
+        previewPosition: null,
+        invalidPlacementReason: null
       };
 
     case ACTIONS.SET_OBJECT_TYPE:
@@ -269,7 +450,8 @@ const editorReducer = (state, action) => {
         // Clear interaction when switching object types
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
-        previewPosition: null
+        previewPosition: null,
+        invalidPlacementReason: null
       };
 
     case ACTIONS.UPDATE_FOG_SETTINGS:
@@ -326,7 +508,8 @@ const editorReducer = (state, action) => {
         // Clear interaction when toggling tool
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
-        previewPosition: null
+        previewPosition: null,
+        invalidPlacementReason: null
       };
 
     default:
@@ -365,6 +548,10 @@ export const EditorProvider = ({ children }) => {
 
   const clearBlocks = useCallback(() => {
     dispatch({ type: ACTIONS.CLEAR_BLOCKS });
+  }, []);
+
+  const undoLastBlock = useCallback(() => {
+    dispatch({ type: ACTIONS.UNDO_LAST_BLOCK });
   }, []);
 
   const clearInteraction = useCallback(() => {
@@ -418,6 +605,16 @@ export const EditorProvider = ({ children }) => {
     return state.previewPosition ? [state.previewPosition] : [];
   }, [state.interactionMode, state.firstClickPosition, state.previewPosition]);
 
+  // Helper to check if position is too close to edge (exported for CursorPreview)
+  const isPositionTooCloseToEdgeHelper = useCallback((position) => {
+    return isPositionTooCloseToEdge(position, state.selectedObjectType);
+  }, [state.selectedObjectType]);
+
+  // Helper to check if position is on a pool border (exported for CursorPreview)
+  const isPositionOnPoolBorderHelper = useCallback((position) => {
+    return isPositionOnPoolBorder(position, state.blocks);
+  }, [state.blocks]);
+
   const contextValue = {
     // State
     ...state,
@@ -427,6 +624,7 @@ export const EditorProvider = ({ children }) => {
     handleFirstClick,
     handleSecondClick,
     clearBlocks,
+    undoLastBlock,
     clearInteraction,
     setToolMode,
     setObjectType,
@@ -440,6 +638,8 @@ export const EditorProvider = ({ children }) => {
     // Helpers
     isPositionOccupiedByBlocks,
     getPreviewPositions,
+    isPositionTooCloseToEdge: isPositionTooCloseToEdgeHelper,
+    isPositionOnPoolBorder: isPositionOnPoolBorderHelper,
     
     // Constants
     INTERACTION_MODES,

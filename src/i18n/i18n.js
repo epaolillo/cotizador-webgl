@@ -23,7 +23,8 @@ const resources = {
       "blocks": {
         "count": "Bloques: {{count}}",
         "clear": "Limpiar Todo",
-        "clearConfirm": "¿Estás seguro de que quieres eliminar todos los bloques?"
+        "clearConfirm": "¿Estás seguro de que quieres eliminar todos los bloques?",
+        "undo": "Deshacer"
       },
       "views": {
         "title": "Vistas",
@@ -51,6 +52,14 @@ const resources = {
         "terrain": "Movimiento de suelo",
         "path": "Camino",
         "block": "Bloque"
+      },
+      "placement": {
+        "errors": {
+          "occupied": "Esta posición está ocupada",
+          "tooCloseToEdge": "No se puede colocar pileta tan cerca del borde (necesita 1 bloque de separación)",
+          "onPoolBorder": "No se puede colocar bloques sobre los antideslizantes de las piletas",
+          "invalid": "Posición no válida"
+        }
       }
     }
   },
@@ -73,7 +82,8 @@ const resources = {
       "blocks": {
         "count": "Blocks: {{count}}",
         "clear": "Clear All",
-        "clearConfirm": "Are you sure you want to remove all blocks?"
+        "clearConfirm": "Are you sure you want to remove all blocks?",
+        "undo": "Undo"
       },
       "views": {
         "title": "Views",
@@ -101,6 +111,14 @@ const resources = {
         "terrain": "Ground Movement",
         "path": "Path",
         "block": "Block"
+      },
+      "placement": {
+        "errors": {
+          "occupied": "This position is occupied",
+          "tooCloseToEdge": "Cannot place pool too close to edge (needs 1 block separation)",
+          "onPoolBorder": "Cannot place blocks on pool anti-slip borders",
+          "invalid": "Invalid position"
+        }
       }
     }
   }

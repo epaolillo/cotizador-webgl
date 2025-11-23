@@ -104,11 +104,16 @@ const GridHelper = () => {
 const InteractionPlane = ({ onPointerMove, onPointerDown }) => {
   const planeRef = useRef();
   
+  // Terrain extends from 0.5 to 20.5, so we need a larger plane to ensure edge clicks work
+  // Make it 22x22 centered at 10.5 to cover 0 to 21 (with margin on all sides)
+  const PLANE_SIZE = 22;
+  const PLANE_CENTER = 10.5;
+  
   return (
     <Plane
       ref={planeRef}
-      args={[GRID_SIZE, GRID_SIZE]}
-      position={[GRID_SIZE / 2, 0, GRID_SIZE / 2]}
+      args={[PLANE_SIZE, PLANE_SIZE]}
+      position={[PLANE_CENTER, 0, PLANE_CENTER]}
       onPointerMove={onPointerMove}
       onPointerDown={onPointerDown}
       rotation={[-Math.PI / 2, 0, 0]}

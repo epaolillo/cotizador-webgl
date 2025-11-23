@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
 import ViewPanel from './ViewPanel';
 import CameraInfo from './CameraInfo';
 import ObjectTypePanel from './ObjectTypePanel';
+import PlacementWarning from './PlacementWarning';
 
 const UI = () => {
   const { t, i18n } = useTranslation();
   const { 
     blocks, 
     clearBlocks, 
+    undoLastBlock,
     interactionMode, 
     INTERACTION_MODES,
     clearInteraction,
@@ -33,6 +35,22 @@ const UI = () => {
     const newLang = currentLang === 'es' ? 'en' : 'es';
     i18n.changeLanguage(newLang);
   };
+
+  // Keyboard shortcut for undo (Ctrl+Z / Cmd+Z)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Check for Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (blocks.length > 0) {
+          undoLastBlock();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [blocks.length, undoLastBlock]);
 
   const getInteractionModeText = () => {
     // For unique objects, show single-click instruction
@@ -151,6 +169,9 @@ const UI = () => {
 
   return (
     <div style={styles.container}>
+      {/* Placement Warning - top center */}
+      <PlacementWarning />
+      
       {/* Object Type Panel - top left */}
       <div style={styles.topLeft}>
         <ObjectTypePanel />
@@ -158,6 +179,17 @@ const UI = () => {
 
       {/* Control buttons - top right */}
       <div style={styles.topRight}>
+        
+        {/* Show Undo button only when NOT placing a block */}
+        {interactionMode === INTERACTION_MODES.NONE && (
+          <button
+            style={styles.button}
+            onClick={undoLastBlock}
+            disabled={blocks.length === 0}
+          >
+            ↩️ {t('blocks.undo')}
+          </button>
+        )}
         
         <button
           style={{...styles.button, ...styles.dangerButton}}
@@ -167,6 +199,7 @@ const UI = () => {
           {t('blocks.clear')}
         </button>
         
+        {/* Show Cancel button only when placing a block */}
         {interactionMode !== INTERACTION_MODES.NONE && (
           <button
             style={styles.button}

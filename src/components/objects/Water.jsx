@@ -245,6 +245,10 @@ const Water = ({
     });
   }, [tilesTextureBase, bounds, wallHeightTotal, avgTileSize]);
   
+  // Terrain limits
+  const TERRAIN_MIN = 0.5;
+  const TERRAIN_MAX = 20.5;
+  
   // Antideslizante border material (same tiles texture for the border around pool)
   const borderWidth = 0.8; // Ancho del borde antideslizante en metros
   const borderHeight = 0.05; // Grosor del borde antideslizante
@@ -294,6 +298,128 @@ const Water = ({
       fog: true
     });
   }, [tilesTextureBase, bounds]);
+  
+  // Calculate adjusted border positions and dimensions to keep them within terrain
+  const adjustedBorders = useMemo(() => {
+    if (!bounds) return null;
+    
+    const borderOffset = 0.4;
+    
+    // Calculate ideal dimensions
+    const idealNorthSouthWidth = bounds.width + borderWidth * 1.75;
+    const idealEastWestDepth = bounds.depth - borderWidth * 0.25;
+    
+    // Calculate ideal positions
+    const idealNorthZ = bounds.maxZ + borderOffset + borderWidth/2;
+    const idealSouthZ = bounds.minZ - borderOffset - borderWidth/2;
+    const idealEastX = bounds.maxX + borderOffset + borderWidth/2;
+    const idealWestX = bounds.minX - borderOffset - borderWidth/2;
+    
+    // --- NORTH BORDER ---
+    const northOuterZ = idealNorthZ + borderWidth/2;
+    let northVisible = true;
+    let northZ = idealNorthZ;
+    
+    if (northOuterZ > TERRAIN_MAX) {
+      const northInnerZ = idealNorthZ - borderWidth/2;
+      if (northInnerZ >= TERRAIN_MAX) {
+        northVisible = false;
+      } else {
+        northZ = TERRAIN_MAX - borderWidth/2;
+      }
+    }
+    
+    // --- SOUTH BORDER ---
+    const southOuterZ = idealSouthZ - borderWidth/2;
+    let southVisible = true;
+    let southZ = idealSouthZ;
+    
+    if (southOuterZ < TERRAIN_MIN) {
+      const southInnerZ = idealSouthZ + borderWidth/2;
+      if (southInnerZ <= TERRAIN_MIN) {
+        southVisible = false;
+      } else {
+        southZ = TERRAIN_MIN + borderWidth/2;
+      }
+    }
+    
+    // --- EAST BORDER ---
+    const eastOuterX = idealEastX + borderWidth/2;
+    let eastVisible = true;
+    let eastX = idealEastX;
+    
+    if (eastOuterX > TERRAIN_MAX) {
+      const eastInnerX = idealEastX - borderWidth/2;
+      if (eastInnerX >= TERRAIN_MAX) {
+        eastVisible = false;
+      } else {
+        eastX = TERRAIN_MAX - borderWidth/2;
+      }
+    }
+    
+    // --- WEST BORDER ---
+    const westOuterX = idealWestX - borderWidth/2;
+    let westVisible = true;
+    let westX = idealWestX;
+    
+    if (westOuterX < TERRAIN_MIN) {
+      const westInnerX = idealWestX + borderWidth/2;
+      if (westInnerX <= TERRAIN_MIN) {
+        westVisible = false;
+      } else {
+        westX = TERRAIN_MIN + borderWidth/2;
+      }
+    }
+    
+    // Adjust North/South width if it extends beyond terrain in X direction
+    const nsLeftEdge = bounds.centerX - idealNorthSouthWidth/2;
+    const nsRightEdge = bounds.centerX + idealNorthSouthWidth/2;
+    let nsWidth = idealNorthSouthWidth;
+    let nsCenterX = bounds.centerX;
+    
+    if (nsLeftEdge < TERRAIN_MIN || nsRightEdge > TERRAIN_MAX) {
+      const leftClamp = Math.max(nsLeftEdge, TERRAIN_MIN);
+      const rightClamp = Math.min(nsRightEdge, TERRAIN_MAX);
+      nsWidth = rightClamp - leftClamp;
+      nsCenterX = (leftClamp + rightClamp) / 2;
+    }
+    
+    // Adjust East/West depth if it extends beyond terrain in Z direction
+    const ewTopEdge = bounds.centerZ + idealEastWestDepth/2;
+    const ewBottomEdge = bounds.centerZ - idealEastWestDepth/2;
+    let ewDepth = idealEastWestDepth;
+    let ewCenterZ = bounds.centerZ;
+    
+    if (ewBottomEdge < TERRAIN_MIN || ewTopEdge > TERRAIN_MAX) {
+      const bottomClamp = Math.max(ewBottomEdge, TERRAIN_MIN);
+      const topClamp = Math.min(ewTopEdge, TERRAIN_MAX);
+      ewDepth = topClamp - bottomClamp;
+      ewCenterZ = (bottomClamp + topClamp) / 2;
+    }
+    
+    return {
+      north: {
+        visible: northVisible,
+        position: [nsCenterX, wallTop, northZ],
+        width: nsWidth
+      },
+      south: {
+        visible: southVisible,
+        position: [nsCenterX, wallTop, southZ],
+        width: nsWidth
+      },
+      east: {
+        visible: eastVisible,
+        position: [eastX, wallTop, ewCenterZ],
+        depth: ewDepth
+      },
+      west: {
+        visible: westVisible,
+        position: [westX, wallTop, ewCenterZ],
+        depth: ewDepth
+      }
+    };
+  }, [bounds, borderWidth, wallTop]);
 
   return (
     <group>
@@ -356,47 +482,55 @@ const Water = ({
           </mesh>
           
           {/* Antideslizante border - 4 rectangles around the pool at ground level */}
-          {borderNorthSouthMaterial && borderEastWestMaterial && (
+          {borderNorthSouthMaterial && borderEastWestMaterial && adjustedBorders && (
             <>
               {/* North border (positive Z) */}
-              <mesh
-                position={[bounds.centerX, wallTop, bounds.maxZ + 0.4 + borderWidth/2]}
-                receiveShadow
-                castShadow
-              >
-                <boxGeometry args={[bounds.width + borderWidth * 1.75, borderHeight, borderWidth]} />
-                <primitive object={borderNorthSouthMaterial} attach="material" />
-              </mesh>
+              {adjustedBorders.north.visible && (
+                <mesh
+                  position={adjustedBorders.north.position}
+                  receiveShadow
+                  castShadow
+                >
+                  <boxGeometry args={[adjustedBorders.north.width, borderHeight, borderWidth]} />
+                  <primitive object={borderNorthSouthMaterial} attach="material" />
+                </mesh>
+              )}
               
               {/* South border (negative Z) */}
-              <mesh
-                position={[bounds.centerX, wallTop, bounds.minZ - 0.4 - borderWidth/2]}
-                receiveShadow
-                castShadow
-              >
-                <boxGeometry args={[bounds.width + borderWidth * 1.75, borderHeight, borderWidth]} />
-                <primitive object={borderNorthSouthMaterial} attach="material" />
-              </mesh>
+              {adjustedBorders.south.visible && (
+                <mesh
+                  position={adjustedBorders.south.position}
+                  receiveShadow
+                  castShadow
+                >
+                  <boxGeometry args={[adjustedBorders.south.width, borderHeight, borderWidth]} />
+                  <primitive object={borderNorthSouthMaterial} attach="material" />
+                </mesh>
+              )}
               
               {/* East border (positive X) */}
-              <mesh
-                position={[bounds.maxX + 0.4 + borderWidth/2, wallTop, bounds.centerZ]}
-                receiveShadow
-                castShadow
-              >
-                <boxGeometry args={[borderWidth, borderHeight, bounds.depth - borderWidth * 0.25]} />
-                <primitive object={borderEastWestMaterial} attach="material" />
-              </mesh>
+              {adjustedBorders.east.visible && (
+                <mesh
+                  position={adjustedBorders.east.position}
+                  receiveShadow
+                  castShadow
+                >
+                  <boxGeometry args={[borderWidth, borderHeight, adjustedBorders.east.depth]} />
+                  <primitive object={borderEastWestMaterial} attach="material" />
+                </mesh>
+              )}
               
               {/* West border (negative X) */}
-              <mesh
-                position={[bounds.minX - 0.4 - borderWidth/2, wallTop, bounds.centerZ]}
-                receiveShadow
-                castShadow
-              >
-                <boxGeometry args={[borderWidth, borderHeight, bounds.depth - borderWidth * 0.25]} />
-                <primitive object={borderEastWestMaterial} attach="material" />
-              </mesh>
+              {adjustedBorders.west.visible && (
+                <mesh
+                  position={adjustedBorders.west.position}
+                  receiveShadow
+                  castShadow
+                >
+                  <boxGeometry args={[borderWidth, borderHeight, adjustedBorders.west.depth]} />
+                  <primitive object={borderEastWestMaterial} attach="material" />
+                </mesh>
+              )}
             </>
           )}
         </>
