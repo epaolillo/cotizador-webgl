@@ -19,7 +19,9 @@ const UI = () => {
     INTERACTION_MODES,
     clearInteraction,
     debugUI,
-    selectedObjectType
+    selectedObjectType,
+    toolActive,
+    toggleToolActive
   } = useEditor();
   
   const [showInstructions, setShowInstructions] = useState(true);
@@ -173,6 +175,20 @@ const UI = () => {
       cursor: 'pointer',
       fontSize: '12px',
       transition: 'all 0.2s ease'
+    },
+    toolToggleActive: {
+      background: 'rgba(34, 197, 94, 0.9)',
+      border: '2px solid rgba(34, 197, 94, 1)',
+      color: '#ffffff',
+      fontWeight: '600',
+      boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)'
+    },
+    toolToggleInactive: {
+      background: 'rgba(239, 68, 68, 0.9)',
+      border: '2px solid rgba(239, 68, 68, 1)',
+      color: '#ffffff',
+      fontWeight: '600',
+      boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)'
     }
   };
 
@@ -206,6 +222,23 @@ const UI = () => {
           disabled={blocks.length === 0}
         >
           {t('blocks.clear')}
+        </button>
+        
+        {/* Tool Toggle Button - below Clear All */}
+        <button
+          style={{
+            ...styles.button,
+            ...(toolActive ? styles.toolToggleActive : styles.toolToggleInactive)
+          }}
+          onClick={toggleToolActive}
+          title={t('objectTypes.toggleTool')}
+        >
+          <span style={{ fontSize: '16px', marginRight: '6px' }}>
+            {toolActive ? '🔧' : '⏸️'}
+          </span>
+          <span>
+            {toolActive ? t('objectTypes.toolActive') : t('objectTypes.toolInactive')}
+          </span>
         </button>
         
         {/* Show Cancel button only when placing a block */}

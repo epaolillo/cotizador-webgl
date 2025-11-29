@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../context/ToastContext';
+import { useDeviceType } from '../hooks/useDeviceType';
 
 const Toast = () => {
   const { t } = useTranslation();
+  const { isMobile } = useDeviceType();
   const { toasts, hideToast } = useToast();
 
   if (toasts.length === 0) {
@@ -15,16 +17,17 @@ const Toast = () => {
       background: 'rgba(0, 0, 0, 0.9)',
       backdropFilter: 'blur(10px)',
       color: 'white',
-      padding: '12px 20px',
+      padding: isMobile ? '10px 16px' : '12px 20px',
       borderRadius: '8px',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '500',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      minWidth: '200px',
-      maxWidth: '400px',
+      minWidth: isMobile ? 'auto' : '200px',
+      maxWidth: isMobile ? 'calc(100vw - 40px)' : '400px',
+      width: isMobile ? 'auto' : 'auto',
       marginBottom: '10px',
       animation: 'slideDown 0.3s ease-out',
       cursor: 'pointer',

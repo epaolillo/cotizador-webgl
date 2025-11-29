@@ -54,7 +54,9 @@ const resources = {
         "block": "Bloque",
         "toolActive": "Herramienta Activa",
         "toolInactive": "Herramienta Inactiva",
-        "toggleTool": "Activar/Desactivar herramienta (Q)"
+        "toggleTool": "Activar/Desactivar herramienta (Q)",
+        "expand": "Expandir",
+        "collapse": "Contraer"
       },
       "placement": {
         "errors": {
@@ -123,7 +125,9 @@ const resources = {
         "block": "Block",
         "toolActive": "Tool Active",
         "toolInactive": "Tool Inactive",
-        "toggleTool": "Toggle tool (Q)"
+        "toggleTool": "Toggle tool (Q)",
+        "expand": "Expand",
+        "collapse": "Collapse"
       },
       "placement": {
         "errors": {

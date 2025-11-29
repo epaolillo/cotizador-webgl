@@ -14,7 +14,7 @@ const CameraAnimator = () => {
     startTarget: new THREE.Vector3(),
     endPosition: new THREE.Vector3(),
     endTarget: new THREE.Vector3(),
-    duration: 300
+    duration: 200
   });
 
   useEffect(() => {

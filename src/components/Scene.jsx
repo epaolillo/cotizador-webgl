@@ -95,9 +95,9 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
         maxDistance={150}
         minPolarAngle={0}
         target={initialCameraTarget}
-        panSpeed={0.8}
-        rotateSpeed={0.8}
-        zoomSpeed={1.0} // Zoom speed with mouse wheel
+        panSpeed={1.5}
+        rotateSpeed={1.5}
+        zoomSpeed={1.5} // Zoom speed with mouse wheel
         makeDefault
       />
 

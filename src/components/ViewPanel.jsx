@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
+import { useDeviceType } from '../hooks/useDeviceType';
 
 /**
  * ViewButton component - Optimized individual button
@@ -53,6 +54,7 @@ ViewButton.displayName = 'ViewButton';
  */
 const ViewPanel = memo(() => {
   const { t } = useTranslation();
+  const { isMobile, isTablet, isTouch } = useDeviceType();
   const { cameraView, animateToView } = useEditor();
 
   const handleViewChange = useCallback((viewName) => {
@@ -65,43 +67,49 @@ const ViewPanel = memo(() => {
   const styles = useMemo(() => ({
     container: {
       position: 'absolute',
-      bottom: '20px',
-      right: '20px',
+      bottom: isMobile ? '10px' : '20px',
+      right: isMobile ? '10px' : '20px',
       pointerEvents: 'auto',
       background: 'rgba(0, 0, 0, 0.9)',
       backdropFilter: 'blur(15px)',
       borderRadius: '12px',
-      padding: '16px',
+      padding: isMobile ? '12px' : '16px',
       border: '1px solid rgba(255, 255, 255, 0.1)',
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-      minWidth: '140px'
+      minWidth: isMobile ? 'auto' : '140px',
+      width: isMobile ? 'auto' : 'auto'
     },
     title: {
       color: 'white',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       fontWeight: '600',
-      marginBottom: '12px',
+      marginBottom: isMobile ? '8px' : '12px',
       textAlign: 'center',
       opacity: 0.9
     },
     viewGrid: {
       display: 'flex',
-      flexDirection: 'column',
-      gap: '8px'
+      flexDirection: isMobile ? 'row' : 'column',
+      gap: isMobile ? '6px' : '8px',
+      flexWrap: isMobile ? 'wrap' : 'nowrap'
     },
     viewButton: {
       background: 'rgba(255, 255, 255, 0.1)',
       border: '2px solid rgba(255, 255, 255, 0.2)',
       color: 'white',
-      padding: '12px 16px',
+      padding: isMobile || isTouch ? '12px 14px' : '12px 16px',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontSize: '13px',
+      fontSize: isMobile ? '12px' : '13px',
       fontWeight: '500',
       transition: 'all 0.2s ease',
       textAlign: 'center',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      letterSpacing: '0.3px'
+      letterSpacing: '0.3px',
+      minHeight: isMobile || isTouch ? '44px' : 'auto',
+      minWidth: isMobile ? '60px' : 'auto',
+      touchAction: 'manipulation',
+      flex: isMobile ? '1 1 auto' : 'none'
     },
     viewButtonActive: {
       background: 'rgba(74, 144, 226, 0.8)',
@@ -121,7 +129,7 @@ const ViewPanel = memo(() => {
       border: '2px solid rgba(255, 255, 255, 0.4)',
       transform: 'translateY(-1px)'
     }
-  }), []);
+  }), [isMobile, isTablet, isTouch]);
 
   // Memoize button states to prevent unnecessary re-renders
   const isAnimating = cameraView.isAnimating;
