@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { EditorProvider, useEditor } from './context/EditorContext';
+import { ToastProvider } from './context/ToastContext';
 import Scene from './components/Scene';
 import UI from './components/UI';
 
@@ -59,12 +60,14 @@ const AppContent = () => {
   );
 };
 
-// Main App component with provider
+// Main App component with providers
 const App = () => {
   return (
-    <EditorProvider>
-      <AppContent />
-    </EditorProvider>
+    <ToastProvider>
+      <EditorProvider>
+        <AppContent />
+      </EditorProvider>
+    </ToastProvider>
   );
 };
 

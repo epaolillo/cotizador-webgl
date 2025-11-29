@@ -10,10 +10,9 @@ const CursorPreview = () => {
     INTERACTION_MODES,
     getPreviewPositions,
     isPositionOccupiedByBlocks,
-    isPositionTooCloseToEdge,
-    isPositionOnPoolBorder,
     selectedObjectType,
-    toolActive
+    toolActive,
+    invalidPlacementReason
   } = useEditor();
 
   const previewPositions = useMemo(() => {
@@ -29,24 +28,19 @@ const CursorPreview = () => {
     return getPreviewPositions();
   }, [getPreviewPositions, selectedObjectType, previewPosition, toolActive]);
 
-  // Determine if any preview position would cause an overlap
+  // Determine if any preview position would cause an overlap or is invalid
   const hasOverlap = useMemo(() => {
     return previewPositions.some(pos => isPositionOccupiedByBlocks(pos));
   }, [previewPositions, isPositionOccupiedByBlocks]);
-  
-  // Determine if any preview position is too close to terrain edge
-  const isTooCloseToEdge = useMemo(() => {
-    return previewPositions.some(pos => isPositionTooCloseToEdge(pos));
-  }, [previewPositions, isPositionTooCloseToEdge]);
 
-  // Determine if any preview position is on a pool border
-  const isOnPoolBorder = useMemo(() => {
-    return previewPositions.some(pos => isPositionOnPoolBorder(pos));
-  }, [previewPositions, isPositionOnPoolBorder]);
+  // Check if placement is invalid (overlap or other validation errors)
+  const isInvalid = useMemo(() => {
+    return hasOverlap || invalidPlacementReason !== null;
+  }, [hasOverlap, invalidPlacementReason]);
 
   // Color based on state
   const previewColor = useMemo(() => {
-    if (hasOverlap || isTooCloseToEdge || isOnPoolBorder) return '#ff4444'; // Red for invalid placement
+    if (isInvalid) return '#ff4444'; // Red for invalid placement
     
     // For unique objects, always show the object's color
     if (selectedObjectType && selectedObjectType.unique) {
@@ -59,12 +53,12 @@ const CursorPreview = () => {
       return selectedObjectType.color;
     }
     return '#ffaa44'; // Orange for first click
-  }, [hasOverlap, isTooCloseToEdge, isOnPoolBorder, interactionMode, INTERACTION_MODES, selectedObjectType]);
+  }, [isInvalid, interactionMode, INTERACTION_MODES, selectedObjectType]);
 
   const previewOpacity = useMemo(() => {
-    if (hasOverlap || isTooCloseToEdge || isOnPoolBorder) return 0.3;
+    if (isInvalid) return 0.3;
     return 0.6;
-  }, [hasOverlap, isTooCloseToEdge, isOnPoolBorder]);
+  }, [isInvalid]);
 
   if (previewPositions.length === 0) {
     return null;

@@ -51,15 +51,25 @@ const resources = {
         "fence": "Cerco",
         "terrain": "Movimiento de suelo",
         "path": "Camino",
-        "block": "Bloque"
+        "block": "Bloque",
+        "toolActive": "Herramienta Activa",
+        "toolInactive": "Herramienta Inactiva",
+        "toggleTool": "Activar/Desactivar herramienta (Q)"
       },
       "placement": {
         "errors": {
           "occupied": "Esta posición está ocupada",
-          "tooCloseToEdge": "No se puede colocar pileta tan cerca del borde (necesita 1 bloque de separación)",
-          "onPoolBorder": "No se puede colocar bloques sobre los antideslizantes de las piletas",
-          "invalid": "Posición no válida"
+          "invalid": "Posición no válida",
+          "on_boundary": "La pileta no se puede colocar en el contorno del terreno",
+          "too_close_to_edge": "La pileta debe estar al menos 1 unidad alejada de los bordes",
+          "anti_slip_overlap": "Los antideslizantes se solapan con otro objeto",
+          "path_on_edge": "Los antideslizantes no se pueden colocar en los extremos del grid"
         }
+      },
+      "toast": {
+        "blockAdded": "Bloque agregado correctamente",
+        "blockRemoved": "Bloque eliminado",
+        "allBlocksCleared": "Todos los bloques fueron eliminados"
       }
     }
   },
@@ -110,15 +120,25 @@ const resources = {
         "fence": "Fence",
         "terrain": "Ground Movement",
         "path": "Path",
-        "block": "Block"
+        "block": "Block",
+        "toolActive": "Tool Active",
+        "toolInactive": "Tool Inactive",
+        "toggleTool": "Toggle tool (Q)"
       },
       "placement": {
         "errors": {
           "occupied": "This position is occupied",
-          "tooCloseToEdge": "Cannot place pool too close to edge (needs 1 block separation)",
-          "onPoolBorder": "Cannot place blocks on pool anti-slip borders",
-          "invalid": "Invalid position"
+          "invalid": "Invalid position",
+          "on_boundary": "Pool cannot be placed on the terrain boundary",
+          "too_close_to_edge": "Pool must be at least 1 unit away from edges",
+          "anti_slip_overlap": "Anti-slip tiles overlap with another object",
+          "path_on_edge": "Anti-slip tiles cannot be placed on grid edges"
         }
+      },
+      "toast": {
+        "blockAdded": "Block added successfully",
+        "blockRemoved": "Block removed",
+        "allBlocksCleared": "All blocks have been cleared"
       }
     }
   }

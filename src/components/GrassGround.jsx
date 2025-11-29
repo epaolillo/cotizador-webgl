@@ -9,7 +9,7 @@ const GrassGround = ({
   size = 20, 
   grassCount = 50000, 
   position = [0, -0.5, 0],
-  poolBlocks = [],
+  allBlocks = [],
   ...props 
 }) => {
   const meshRef = useRef();
@@ -37,89 +37,139 @@ const GrassGround = ({
     return geometry;
   }, [size]);
 
-  // Calculate pool bounds for grass exclusion (more efficient than individual positions)
-  const poolBounds = useMemo(() => {
+  // Calculate bounds for ALL blocks to exclude grass
+  // Wherever there's ANY block placed, remove the 3D animated grass
+  const allExclusionBounds = useMemo(() => {
     const bounds = [];
-    const borderPadding = 0.8; // Ancho del borde antideslizante
-    poolBlocks.forEach(block => {
+    // No padding - only exclude the exact block area
+    // Each block is 1x1, centered at integer coordinates, so extends from pos.x - 0.5 to pos.x + 0.5
+    
+    allBlocks.forEach(block => {
       if (block.positions && block.positions.length > 0) {
         let minX = Infinity, maxX = -Infinity;
         let minZ = Infinity, maxZ = -Infinity;
         
         block.positions.forEach(pos => {
-          minX = Math.min(minX, pos.x);
-          maxX = Math.max(maxX, pos.x);
-          minZ = Math.min(minZ, pos.z);
-          maxZ = Math.max(maxZ, pos.z);
+          // Block positions are integer grid coordinates (e.g., x=5)
+          // Each block is 1x1 unit, so it extends from pos.x - 0.5 to pos.x + 0.5
+          minX = Math.min(minX, pos.x - 0.5);
+          maxX = Math.max(maxX, pos.x + 0.5);
+          minZ = Math.min(minZ, pos.z - 0.5);
+          maxZ = Math.max(maxZ, pos.z + 0.5);
         });
         
-        // Add padding for walls + antideslizante border
+        // No padding - only exclude the exact block area
         bounds.push({
-          minX: minX - 0.5 - borderPadding,
-          maxX: maxX + 0.5 + borderPadding,
-          minZ: minZ - 0.5 - borderPadding,
-          maxZ: maxZ + 0.5 + borderPadding
+          minX: minX,
+          maxX: maxX,
+          minZ: minZ,
+          maxZ: maxZ
         });
       }
     });
+    
     return bounds;
-  }, [poolBlocks]);
+  }, [allBlocks]);
 
-  // Create material with pool exclusion
-  const material = useMemo(() => {
-    // Flatten bounds into array for shader (max 20 pools)
-    const boundsArray = new Float32Array(80); // 20 pools * 4 values (minX, maxX, minZ, maxZ)
-    for (let i = 0; i < Math.min(poolBounds.length, 20); i++) {
-      const b = poolBounds[i];
+  // Create grass material WITH block exclusion (for 3D grass blades)
+  const grassMaterial = useMemo(() => {
+    // Flatten bounds into array for shader (max 100 exclusion areas for all blocks)
+    const boundsArray = new Float32Array(400); // 100 areas * 4 values (minX, maxX, minZ, maxZ)
+    const exclusionCount = Math.min(allExclusionBounds.length, 100);
+    
+    for (let i = 0; i < exclusionCount; i++) {
+      const b = allExclusionBounds[i];
       boundsArray[i * 4 + 0] = b.minX;
       boundsArray[i * 4 + 1] = b.maxX;
       boundsArray[i * 4 + 2] = b.minZ;
       boundsArray[i * 4 + 3] = b.maxZ;
     }
     
-    return new THREE.ShaderMaterial({
+    const material = new THREE.ShaderMaterial({
       uniforms: {
         uCloud: { value: cloudTex },
         uTime: { value: 0 },
         uPoolBounds: { value: boundsArray },
-        uPoolCount: { value: Math.min(poolBounds.length, 20) },
+        uPoolCount: { value: exclusionCount },
         uGrassOffset: { value: new THREE.Vector2(position[0], position[2]) }
       },
       side: THREE.DoubleSide,
       vertexShader,
       fragmentShader
     });
-  }, [cloudTex, poolBounds, position]);
+    
+    // Force material update
+    material.needsUpdate = true;
+    
+    return material;
+  }, [cloudTex, allExclusionBounds, position, vertexShader, fragmentShader]);
+
+  // Create floor material WITHOUT pool exclusion (for flat grass plane)
+  const floorMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uCloud: { value: cloudTex },
+        uTime: { value: 0 },
+        uPoolBounds: { value: new Float32Array(80) }, // Empty array (no exclusion)
+        uPoolCount: { value: 0 }, // No pools to exclude
+        uGrassOffset: { value: new THREE.Vector2(position[0], position[2]) }
+      },
+      side: THREE.DoubleSide,
+      vertexShader,
+      fragmentShader
+    });
+  }, [cloudTex, position]);
+
+  // Update material uniforms when bounds change
+  React.useEffect(() => {
+    if (meshRef.current && meshRef.current.material && meshRef.current.material.uniforms) {
+      // Update the bounds array in the material
+      const boundsArray = new Float32Array(400);
+      const exclusionCount = Math.min(allExclusionBounds.length, 100);
+      
+      for (let i = 0; i < exclusionCount; i++) {
+        const b = allExclusionBounds[i];
+        boundsArray[i * 4 + 0] = b.minX;
+        boundsArray[i * 4 + 1] = b.maxX;
+        boundsArray[i * 4 + 2] = b.minZ;
+        boundsArray[i * 4 + 3] = b.maxZ;
+      }
+      
+      meshRef.current.material.uniforms.uPoolBounds.value = boundsArray;
+      meshRef.current.material.uniforms.uPoolCount.value = exclusionCount;
+      meshRef.current.material.needsUpdate = true;
+    }
+  }, [allExclusionBounds]);
 
   // Animation loop
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime() * 1000;
     
-    if (meshRef.current && meshRef.current.material.uniforms) {
+    if (meshRef.current && meshRef.current.material && meshRef.current.material.uniforms) {
       meshRef.current.material.uniforms.uTime.value = time;
     }
     
-    if (floorRef.current && floorRef.current.material.uniforms) {
+    if (floorRef.current && floorRef.current.material && floorRef.current.material.uniforms) {
       floorRef.current.material.uniforms.uTime.value = time;
     }
   });
 
   return (
     <group position={position} {...props}>
-      {/* Grass blades */}
+      {/* 3D Grass blades WITH pool exclusion */}
       <mesh
         ref={meshRef}
         geometry={grassGeometry}
-        material={material}
+        material={grassMaterial}
         castShadow
         receiveShadow
       />
       
-      {/* Floor square plane */}
+      {/* Floor square plane WITHOUT pool exclusion */}
       <mesh
         ref={floorRef}
         geometry={floorGeometry}
-        material={material}
+        material={floorMaterial}
         position={[0, -Number.EPSILON, 0]}
         receiveShadow
       />

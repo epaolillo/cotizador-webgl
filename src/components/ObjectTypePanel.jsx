@@ -7,7 +7,9 @@ const ObjectTypePanel = () => {
   const { 
     selectedObjectType, 
     setObjectType, 
-    OBJECT_TYPES 
+    OBJECT_TYPES,
+    toolActive,
+    toggleToolActive
   } = useEditor();
 
   const handleTypeSelect = (objectType) => {
@@ -67,11 +69,61 @@ const ObjectTypePanel = () => {
     buttonText: {
       fontSize: '11px',
       lineHeight: '1.2'
+    },
+    toolToggleContainer: {
+      marginBottom: '12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    toolToggleButton: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      border: '2px solid rgba(255, 255, 255, 0.2)',
+      color: 'white',
+      padding: '8px 16px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '13px',
+      fontWeight: '500',
+      transition: 'all 0.2s ease',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    },
+    toolToggleActive: {
+      background: 'rgba(34, 197, 94, 0.3)',
+      border: '2px solid rgba(34, 197, 94, 0.6)',
+      color: '#86efac'
+    },
+    toolToggleInactive: {
+      background: 'rgba(239, 68, 68, 0.3)',
+      border: '2px solid rgba(239, 68, 68, 0.6)',
+      color: '#fca5a5'
     }
   };
 
   return (
     <div style={styles.container}>
+      {/* Tool Toggle Button */}
+      <div style={styles.toolToggleContainer}>
+        <button
+          style={{
+            ...styles.toolToggleButton,
+            ...(toolActive ? styles.toolToggleActive : styles.toolToggleInactive)
+          }}
+          onClick={toggleToolActive}
+          title={t('objectTypes.toggleTool')}
+        >
+          <span style={{ fontSize: '16px' }}>
+            {toolActive ? '🔧' : '⏸️'}
+          </span>
+          <span>
+            {toolActive ? t('objectTypes.toolActive') : t('objectTypes.toolInactive')}
+          </span>
+        </button>
+      </div>
+      
       <div style={styles.title}>
         {t('objectTypes.title')}
       </div>

@@ -4,12 +4,31 @@ import { Plane, Box } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
 import GrassGround from './GrassGround';
+import BackgroundTrees from './BackgroundTrees';
 import brickTexture from '../assets/uneven-brick-wall-light-colors.jpg';
 
 // Grid configuration
 const GRID_SIZE = 20; // Grid extends from -GRID_SIZE to +GRID_SIZE
 const GRID_SPACING = 1;
 const BLOCK_SIZE = 1;
+// Walls are at 0.5 and 20.5, but grid positions are integers (0, 1, 2... 20, 21)
+// So positions 0, 1, 20, and 21 are "on the boundary" (next to walls)
+const TERRAIN_MIN_GRID = 0;  // First grid position (next to wall at 0.5)
+const TERRAIN_MAX_GRID = GRID_SIZE + 1; // Last grid position (next to wall at 20.5)
+
+// Check if a position is on the terrain boundary (where walls are)
+// Since walls are at 0.5 and 20.5, and grid positions are integers,
+// positions 0, 1, 20, and 21 are considered "on boundary"
+const isOnTerrainBoundary = (position) => {
+  return position.x === TERRAIN_MIN_GRID || 
+         position.x === TERRAIN_MIN_GRID + 1 ||
+         position.x === TERRAIN_MAX_GRID - 1 ||
+         position.x === TERRAIN_MAX_GRID || 
+         position.z === TERRAIN_MIN_GRID || 
+         position.z === TERRAIN_MIN_GRID + 1 ||
+         position.z === TERRAIN_MAX_GRID - 1 ||
+         position.z === TERRAIN_MAX_GRID;
+};
 
 
 const X_LINES = () => {
@@ -138,7 +157,9 @@ const BlockGrid = () => {
     selectedObjectType,
     toolActive,
     toggleToolActive,
-    blocks
+    blocks,
+    invalidPlacementReason,
+    firstClickPosition
   } = useEditor();
   
   const { camera, raycaster } = useThree();
@@ -194,6 +215,12 @@ const BlockGrid = () => {
 
   // Handle clicks for block placement
   const handlePointerDown = (event) => {
+    // Only handle left mouse button (button === 0)
+    // button 0 = left, button 1 = middle, button 2 = right
+    if (event.button !== 0) {
+      return;
+    }
+
     // Only handle clicks when tool is active and in block mode
     if (!toolActive || toolMode !== TOOL_MODES.BLOCK) {
       return;
@@ -208,6 +235,39 @@ const BlockGrid = () => {
     // Ensure we're above ground
     if (gridPosition.y < 0) {
       gridPosition.y = 0;
+    }
+
+    // Check if pool/water is being placed on boundary
+    const isPool = selectedObjectType && 
+                  (selectedObjectType.id === 'pool' || selectedObjectType.id === 'water');
+    
+    if (isPool) {
+      // For first click, check if position is on boundary
+      if (interactionMode === INTERACTION_MODES.NONE && isOnTerrainBoundary(gridPosition)) {
+        return; // Block the click
+      }
+      
+      // For second click, check if any position in the selection would be on boundary
+      if (interactionMode === INTERACTION_MODES.PLACING_SECOND && firstClickPosition) {
+        const minX = Math.min(firstClickPosition.x, gridPosition.x);
+        const maxX = Math.max(firstClickPosition.x, gridPosition.x);
+        const minZ = Math.min(firstClickPosition.z, gridPosition.z);
+        const maxZ = Math.max(firstClickPosition.z, gridPosition.z);
+        
+        // Check if any position in the range is on boundary
+        for (let x = minX; x <= maxX; x++) {
+          for (let z = minZ; z <= maxZ; z++) {
+            if (isOnTerrainBoundary({ x, y: gridPosition.y, z })) {
+              return; // Block the click
+            }
+          }
+        }
+      }
+    }
+
+    // Don't allow clicks if placement is invalid
+    if (invalidPlacementReason) {
+      return; // Block the click
     }
 
     // Handle click based on current interaction mode
@@ -256,7 +316,7 @@ const BlockGrid = () => {
           size={GRID_SIZE}
           grassCount={90000}
           position={[(GRID_SIZE / 2) + 0.5, -0.5, (GRID_SIZE / 2) + 0.5]}
-          poolBlocks={blocks.filter(block => block.type && (block.type.id === 'pool' || block.type.id === 'water'))}
+          allBlocks={blocks}
         />
 
       
@@ -306,6 +366,8 @@ const BlockGrid = () => {
         <meshStandardMaterial map={brickTex} />
       </Box>
 
+      {/* Background trees/plants around the perimeter */}
+      <BackgroundTrees gridSize={GRID_SIZE} />
       
         {/* Grid lines for visual reference (subtle) */}
         { /* 

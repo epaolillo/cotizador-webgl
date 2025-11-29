@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor } from '../context/EditorContext';
+import { useToast } from '../context/ToastContext';
+import { useInvalidPlacementToast } from '../hooks/useInvalidPlacementToast';
 import ViewPanel from './ViewPanel';
 import CameraInfo from './CameraInfo';
 import ObjectTypePanel from './ObjectTypePanel';
-import PlacementWarning from './PlacementWarning';
+import Toast from './Toast';
 
 const UI = () => {
   const { t, i18n } = useTranslation();
+  const { showToast } = useToast();
   const { 
     blocks, 
     clearBlocks, 
@@ -20,14 +23,20 @@ const UI = () => {
   } = useEditor();
   
   const [showInstructions, setShowInstructions] = useState(true);
+  
+  // Auto-show toasts for invalid placement attempts
+  useInvalidPlacementToast();
 
   const handleClearBlocks = () => {
     if (blocks.length > 0) {
-      const confirmed = window.confirm(t('blocks.clearConfirm'));
-      if (confirmed) {
-        clearBlocks();
-      }
+      clearBlocks();
+      showToast(t('toast.allBlocksCleared'), 'success');
     }
+  };
+
+  const handleUndo = () => {
+    undoLastBlock();
+    showToast(t('toast.blockRemoved'), 'info');
   };
 
   const toggleLanguage = () => {
@@ -169,8 +178,8 @@ const UI = () => {
 
   return (
     <div style={styles.container}>
-      {/* Placement Warning - top center */}
-      <PlacementWarning />
+      {/* Toast Notifications */}
+      <Toast />
       
       {/* Object Type Panel - top left */}
       <div style={styles.topLeft}>
@@ -184,7 +193,7 @@ const UI = () => {
         {interactionMode === INTERACTION_MODES.NONE && (
           <button
             style={styles.button}
-            onClick={undoLastBlock}
+            onClick={handleUndo}
             disabled={blocks.length === 0}
           >
             ↩️ {t('blocks.undo')}

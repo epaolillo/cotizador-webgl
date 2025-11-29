@@ -2,6 +2,8 @@ import React from 'react';
 import Block from './Block';
 import Tree from './objects/Tree';
 import Water from './objects/Water';
+import TilePath from './objects/TilePath';
+import Fence from './objects/Fence';
 
 /**
  * Component Registry - Maps object type IDs to their JSX components
@@ -17,9 +19,9 @@ const COMPONENT_REGISTRY = {
   water: Water,    // Water uses custom Water component with reflective surface
   pool: Water,     // Pool uses Water component with reflective turquoise surface
   tree: Tree,      // Tree uses custom Tree component with GLB model
-  fence: Block,    // Fence uses default Block for now (placeholder for future custom component)
+  fence: Fence,    // Fence uses custom Fence component with vertical posts and horizontal rails
   terrain: Block,  // Terrain uses default Block for now (placeholder for future custom component)
-  path: Block,     // Path uses default Block for now (placeholder for future custom component)
+  path: TilePath,  // Path uses TilePath component with tile/venecita texture
 };
 
 /**

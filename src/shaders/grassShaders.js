@@ -2,7 +2,7 @@ export const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform vec2 uGrassOffset;
   uniform float uPoolCount;
-  uniform float uPoolBounds[80]; // Max 20 pools * 4 values (minX, maxX, minZ, maxZ)
+  uniform float uPoolBounds[400]; // Max 100 exclusion areas (all blocks) * 4 values (minX, maxX, minZ, maxZ)
 
   varying vec3 vPosition;
   varying vec2 vUv;
@@ -18,8 +18,8 @@ export const vertexShader = /* glsl */ `
   }
 
   bool isPositionInPool(vec2 worldPos) {
-    // Check against all pool bounds
-    for (int i = 0; i < 20; i++) {
+    // Check against all exclusion bounds (all blocks)
+    for (int i = 0; i < 100; i++) {
       if (float(i) >= uPoolCount) break;
       
       float minX = uPoolBounds[i * 4 + 0];

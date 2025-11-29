@@ -63,10 +63,10 @@ export const OBJECT_TYPES = {
     id: 'fence',
     color: '#8B4513', // Saddle brown
     name: 'Cerco',
-    component: 'Block', // Uses default Block component
-    height: 1,
+    component: 'Fence', // Uses custom Fence component with posts and rails
+    height: 1.0,
     unique: false, // Can be placed with multi-block selection
-    description: 'Fence or barrier'
+    description: 'Wooden fence with vertical posts and horizontal rails'
   },
   TERRAIN: {
     id: 'terrain',
@@ -79,12 +79,12 @@ export const OBJECT_TYPES = {
   },
   PATH: {
     id: 'path',
-    color: '#696969', // Dim gray
+    color: '#D3D3D3', // Light gray (more visible in preview)
     name: 'Camino',
-    component: 'Block', // Uses default Block component
-    height: 1,
+    component: 'TilePath', // Uses TilePath component with tile texture
+    height: 0.05, // Same height as anti-slip border
     unique: false, // Can be placed with multi-block selection
-    description: 'Pathway or walkway'
+    description: 'Pathway or walkway with tile texture'
   },
   BLOCK: {
     id: 'block',
@@ -151,6 +151,13 @@ const initialState = {
   }
 };
 
+// Grid configuration - must match BlockGrid.jsx
+const GRID_SIZE = 20;
+// Walls are at 0.5 and 20.5, but grid positions are integers (0, 1, 2... 20, 21)
+// So positions 0, 1, 20, and 21 are "on the boundary" (next to walls)
+const TERRAIN_MIN_GRID = 0;  // First grid position (next to wall at 0.5)
+const TERRAIN_MAX_GRID = GRID_SIZE + 1; // Last grid position (next to wall at 20.5)
+
 // Utility functions for grid operations
 const vectorsEqual = (v1, v2) => {
   if (!v1 || !v2) return false;
@@ -161,6 +168,25 @@ const isPositionOccupied = (position, blocks) => {
   return blocks.some(block => 
     block.positions.some(blockPos => vectorsEqual(blockPos, position))
   );
+};
+
+// Check if a position is on the terrain boundary (where walls are)
+// Since walls are at 0.5 and 20.5, and grid positions are integers,
+// positions 0, 1, 20, and 21 are considered "on boundary"
+const isOnTerrainBoundary = (position) => {
+  return position.x === TERRAIN_MIN_GRID || 
+         position.x === TERRAIN_MIN_GRID + 1 ||
+         position.x === TERRAIN_MAX_GRID - 1 ||
+         position.x === TERRAIN_MAX_GRID || 
+         position.z === TERRAIN_MIN_GRID || 
+         position.z === TERRAIN_MIN_GRID + 1 ||
+         position.z === TERRAIN_MAX_GRID - 1 ||
+         position.z === TERRAIN_MAX_GRID;
+};
+
+// Check if any position in a set is on the terrain boundary
+const hasPositionOnBoundary = (positions) => {
+  return positions.some(pos => isOnTerrainBoundary(pos));
 };
 
 const generateBlockPositions = (start, end) => {
@@ -187,102 +213,55 @@ const wouldCauseOverlap = (start, end, existingBlocks) => {
   return newPositions.some(pos => isPositionOccupied(pos, existingBlocks));
 };
 
-// Terrain constants
-const TERRAIN_MIN = 0.5;
-const TERRAIN_MAX = 20.5;
-const POOL_EDGE_MARGIN = 1; // Margen de 1 bloque para que quepa el antideslizante
-
-// Calculate the bounding box for a pool block
-const getPoolBounds = (block) => {
-  if (!block || !block.positions || block.positions.length === 0) {
-    return null;
-  }
-
-  const positions = block.positions;
-  const xs = positions.map(p => p.x);
-  const zs = positions.map(p => p.z);
-
-  return {
-    minX: Math.min(...xs),
-    maxX: Math.max(...xs),
-    minZ: Math.min(...zs),
-    maxZ: Math.max(...zs)
-  };
-};
-
-// Calculate the anti-slip border area for a pool block
-// This matches the actual border dimensions from Water.jsx:
-// - borderWidth = 0.8
-// - borderOffset = 0.4
-// - Border extends approximately 1.2 units beyond pool edges
-const getPoolBorderArea = (block) => {
-  const bounds = getPoolBounds(block);
-  if (!bounds) return null;
-
-  // The anti-slip border extends approximately 1.2 units beyond the pool edges
-  // This accounts for borderOffset (0.4) + borderWidth (0.8)
-  const borderExtension = 1.2;
+// Calculate adjacent positions around a set of positions (for anti-slip border around pool)
+const getAdjacentPositions = (positions) => {
+  const adjacentSet = new Set();
+  const positionSet = new Set();
   
-  return {
-    minX: bounds.minX - borderExtension,
-    maxX: bounds.maxX + borderExtension,
-    minZ: bounds.minZ - borderExtension,
-    maxZ: bounds.maxZ + borderExtension
-  };
-};
-
-// Check if a position (block center) intersects with a pool's anti-slip border
-const isPositionOnPoolBorder = (position, blocks) => {
-  return blocks.some(block => {
-    // Only check pool blocks
-    if (!block.type || block.type.id !== 'pool') return false;
-
-    const borderArea = getPoolBorderArea(block);
-    if (!borderArea) return false;
-
-    // A block at position (x, z) occupies space from (x-0.5, z-0.5) to (x+0.5, z+0.5)
-    // Check if this block intersects with the border area
-    const blockMinX = position.x - 0.5;
-    const blockMaxX = position.x + 0.5;
-    const blockMinZ = position.z - 0.5;
-    const blockMaxZ = position.z + 0.5;
+  // Create a set of existing positions for quick lookup
+  positions.forEach(pos => {
+    const key = `${pos.x},${pos.y},${pos.z}`;
+    positionSet.add(key);
+  });
+  
+  // For each position, check all 8 adjacent positions (in XZ plane, same Y)
+  positions.forEach(pos => {
+    const directions = [
+      { x: -1, z: 0 },   // Left
+      { x: 1, z: 0 },    // Right
+      { x: 0, z: -1 },   // Front
+      { x: 0, z: 1 },    // Back
+      { x: -1, z: -1 },  // Front-Left
+      { x: -1, z: 1 },   // Back-Left
+      { x: 1, z: -1 },   // Front-Right
+      { x: 1, z: 1 }     // Back-Right
+    ];
     
-    // Check if block intersects with border area
-    const intersectsX = blockMaxX >= borderArea.minX && blockMinX <= borderArea.maxX;
-    const intersectsZ = blockMaxZ >= borderArea.minZ && blockMinZ <= borderArea.maxZ;
-    
-    // Now check if it's actually on the border (not inside the pool itself)
-    const poolBounds = getPoolBounds(block);
-    if (!poolBounds) return false;
-    
-    // A position is on the border if it intersects the border area but not the pool interior
-    // Pool interior extends from minX-0.5 to maxX+0.5 (accounting for block size)
-    const poolInteriorMinX = poolBounds.minX - 0.5;
-    const poolInteriorMaxX = poolBounds.maxX + 0.5;
-    const poolInteriorMinZ = poolBounds.minZ - 0.5;
-    const poolInteriorMaxZ = poolBounds.maxZ + 0.5;
-    
-    const insidePool = blockMinX >= poolInteriorMinX && 
-                       blockMaxX <= poolInteriorMaxX && 
-                       blockMinZ >= poolInteriorMinZ && 
-                       blockMaxZ <= poolInteriorMaxZ;
-    
-    // Return true if intersects border area but not completely inside pool
-    return intersectsX && intersectsZ && !insidePool;
+    directions.forEach(dir => {
+      const adjPos = {
+        x: pos.x + dir.x,
+        y: pos.y, // Same Y level
+        z: pos.z + dir.z
+      };
+      
+      const key = `${adjPos.x},${adjPos.y},${adjPos.z}`;
+      
+      // Only add if it's not part of the original positions
+      if (!positionSet.has(key)) {
+        adjacentSet.add(key);
+      }
+    });
+  });
+  
+  // Convert set back to array of position objects
+  return Array.from(adjacentSet).map(key => {
+    const [x, y, z] = key.split(',').map(Number);
+    return { x, y, z };
   });
 };
 
-// Check if a position is too close to terrain edge for pool placement
-const isPositionTooCloseToEdge = (position, objectType) => {
-  // Only check for pool objects
-  if (objectType.id !== 'pool') return false;
-  
-  // Check if position is within valid area (at least 1 block away from edges)
-  return position.x <= TERRAIN_MIN + POOL_EDGE_MARGIN ||
-         position.x >= TERRAIN_MAX - POOL_EDGE_MARGIN ||
-         position.z <= TERRAIN_MIN + POOL_EDGE_MARGIN ||
-         position.z >= TERRAIN_MAX - POOL_EDGE_MARGIN;
-};
+// Note: Anti-slip borders removed - users place them manually with Path type
+// No terrain edge restrictions needed anymore
 
 // Reducer
 const editorReducer = (state, action) => {
@@ -292,13 +271,28 @@ const editorReducer = (state, action) => {
       let reason = null;
       
       if (position) {
+        // Check if selected object is pool/water
+        const isPool = state.selectedObjectType && 
+                      (state.selectedObjectType.id === 'pool' || state.selectedObjectType.id === 'water');
+        
+        if (isPool) {
+          // For pool, check all positions that would be generated
+          let positionsToCheck = [position];
+          
+          // If we're in PLACING_SECOND mode, check all positions in the selection
+          if (state.interactionMode === INTERACTION_MODES.PLACING_SECOND && state.firstClickPosition) {
+            positionsToCheck = generateBlockPositions(state.firstClickPosition, position);
+          }
+          
+          // Check if any position is on the terrain boundary
+          if (hasPositionOnBoundary(positionsToCheck)) {
+            reason = 'on_boundary';
+          }
+        }
+        
         // Check various invalid conditions in order of priority
-        if (isPositionOccupied(position, state.blocks)) {
+        if (!reason && isPositionOccupied(position, state.blocks)) {
           reason = 'occupied';
-        } else if (isPositionTooCloseToEdge(position, state.selectedObjectType)) {
-          reason = 'tooCloseToEdge';
-        } else if (isPositionOnPoolBorder(position, state.blocks)) {
-          reason = 'onPoolBorder';
         }
       }
       
@@ -312,28 +306,38 @@ const editorReducer = (state, action) => {
     case ACTIONS.SET_FIRST_CLICK: {
       const position = action.payload;
       
-      // Don't allow first click if pool is too close to edge
-      if (isPositionTooCloseToEdge(position, state.selectedObjectType)) {
-        console.warn('No se puede colocar la pileta tan cerca del borde del terreno');
-        return state; // Don't set first click
-      }
-
-      // Don't allow placement on pool borders
-      if (isPositionOnPoolBorder(position, state.blocks)) {
-        console.warn('No se puede colocar bloques sobre los antideslizantes de las piletas');
-        return state; // Don't set first click
+      // Check if selected object is pool/water and first click is on boundary
+      const isPool = state.selectedObjectType && 
+                    (state.selectedObjectType.id === 'pool' || state.selectedObjectType.id === 'water');
+      
+      let reason = null;
+      if (isPool && isOnTerrainBoundary(position)) {
+        reason = 'on_boundary';
       }
       
       return {
         ...state,
         firstClickPosition: position,
         interactionMode: INTERACTION_MODES.PLACING_SECOND,
-        invalidPlacementReason: null
+        invalidPlacementReason: reason
       };
     }
 
     case ACTIONS.ADD_BLOCK: {
       const { start, end } = action.payload;
+      
+      // Check if selected object is pool/water
+      const isPool = state.selectedObjectType && 
+                    (state.selectedObjectType.id === 'pool' || state.selectedObjectType.id === 'water');
+      
+      if (isPool) {
+        // Check if any position would be on the terrain boundary
+        const positions = generateBlockPositions(start, end);
+        if (hasPositionOnBoundary(positions)) {
+          console.warn('No se puede colocar la pileta en el contorno del terreno');
+          return state; // Don't add block if it's on boundary
+        }
+      }
       
       // Check for overlaps
       if (wouldCauseOverlap(start, end, state.blocks)) {
@@ -341,38 +345,7 @@ const editorReducer = (state, action) => {
         return state; // Don't add block if it would overlap
       }
       
-      // Check if any position in the pool area is too close to edge
       const positions = generateBlockPositions(start, end);
-      const tooCloseToEdge = positions.some(pos => 
-        isPositionTooCloseToEdge(pos, state.selectedObjectType)
-      );
-      
-      if (tooCloseToEdge) {
-        console.warn('La pileta no puede estar tan cerca del borde (necesita al menos 1 bloque de separación)');
-        return {
-          ...state,
-          firstClickPosition: null,
-          interactionMode: INTERACTION_MODES.NONE,
-          previewPosition: null,
-          invalidPlacementReason: null
-        };
-      }
-
-      // Check if any position is on a pool border
-      const onPoolBorder = positions.some(pos => 
-        isPositionOnPoolBorder(pos, state.blocks)
-      );
-
-      if (onPoolBorder) {
-        console.warn('No se puede colocar bloques sobre los antideslizantes de las piletas');
-        return {
-          ...state,
-          firstClickPosition: null,
-          interactionMode: INTERACTION_MODES.NONE,
-          previewPosition: null,
-          invalidPlacementReason: null
-        };
-      }
 
       const newBlock = {
         id: `${state.selectedObjectType.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -383,9 +356,41 @@ const editorReducer = (state, action) => {
         createdAt: Date.now()
       };
 
+      const blocksToAdd = [newBlock];
+
+      // If it's a pool, automatically add anti-slip border (path) around it
+      if (isPool) {
+        const adjacentPositions = getAdjacentPositions(positions);
+        
+        // Create a set of pool positions for quick lookup
+        const poolPositionSet = new Set(positions.map(p => `${p.x},${p.y},${p.z}`));
+        
+        // Filter out positions that are already occupied or are part of the pool
+        const validAdjacentPositions = adjacentPositions.filter(pos => {
+          const posKey = `${pos.x},${pos.y},${pos.z}`;
+          // Don't add if it's part of the pool or already occupied
+          return !poolPositionSet.has(posKey) && !isPositionOccupied(pos, state.blocks);
+        });
+
+        // Create a path block for each adjacent position
+        // Group contiguous positions to create fewer blocks (optional optimization)
+        validAdjacentPositions.forEach(adjPos => {
+          // Create a single-block path for each adjacent position
+          const pathBlock = {
+            id: `path_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            positions: [adjPos],
+            start: adjPos,
+            end: adjPos,
+            type: OBJECT_TYPES.PATH,
+            createdAt: Date.now()
+          };
+          blocksToAdd.push(pathBlock);
+        });
+      }
+
       return {
         ...state,
-        blocks: [...state.blocks, newBlock],
+        blocks: [...state.blocks, ...blocksToAdd],
         firstClickPosition: null,
         interactionMode: INTERACTION_MODES.NONE,
         previewPosition: null,
@@ -605,16 +610,6 @@ export const EditorProvider = ({ children }) => {
     return state.previewPosition ? [state.previewPosition] : [];
   }, [state.interactionMode, state.firstClickPosition, state.previewPosition]);
 
-  // Helper to check if position is too close to edge (exported for CursorPreview)
-  const isPositionTooCloseToEdgeHelper = useCallback((position) => {
-    return isPositionTooCloseToEdge(position, state.selectedObjectType);
-  }, [state.selectedObjectType]);
-
-  // Helper to check if position is on a pool border (exported for CursorPreview)
-  const isPositionOnPoolBorderHelper = useCallback((position) => {
-    return isPositionOnPoolBorder(position, state.blocks);
-  }, [state.blocks]);
-
   const contextValue = {
     // State
     ...state,
@@ -638,8 +633,6 @@ export const EditorProvider = ({ children }) => {
     // Helpers
     isPositionOccupiedByBlocks,
     getPreviewPositions,
-    isPositionTooCloseToEdge: isPositionTooCloseToEdgeHelper,
-    isPositionOnPoolBorder: isPositionOnPoolBorderHelper,
     
     // Constants
     INTERACTION_MODES,
