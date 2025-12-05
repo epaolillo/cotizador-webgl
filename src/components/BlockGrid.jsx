@@ -1,32 +1,30 @@
 import React, { useMemo, useRef } from 'react';
-import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { Plane, Box } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
+import { Plane } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
 import GrassGround from './GrassGround';
-import BackgroundTrees from './BackgroundTrees';
-import brickTexture from '../assets/uneven-brick-wall-light-colors.jpg';
+import CountryGrid from './CountryGrid';
+import CornerLights from './CornerLights';
+import House from './House';
+import LeftSideTrees from './LeftSideTrees';
+import SecondTreeGroup from './SecondTreeGroup';
 
 // Grid configuration
 const GRID_SIZE = 20; // Grid extends from -GRID_SIZE to +GRID_SIZE
 const GRID_SPACING = 1;
 const BLOCK_SIZE = 1;
-// Walls are at 0.5 and 20.5, but grid positions are integers (0, 1, 2... 20, 21)
-// So positions 0, 1, 20, and 21 are "on the boundary" (next to walls)
-const TERRAIN_MIN_GRID = 0;  // First grid position (next to wall at 0.5)
-const TERRAIN_MAX_GRID = GRID_SIZE + 1; // Last grid position (next to wall at 20.5)
+// Valid positions are from 1 to GRID_SIZE (one block inward from edges)
+// Positions 0, 1, GRID_SIZE, and GRID_SIZE+1 are "on the boundary" (restricted)
+const TERRAIN_MIN_GRID = 1;  // First valid grid position (one block inward)
+const TERRAIN_MAX_GRID = GRID_SIZE; // Last valid grid position (one block inward)
 
-// Check if a position is on the terrain boundary (where walls are)
-// Since walls are at 0.5 and 20.5, and grid positions are integers,
-// positions 0, 1, 20, and 21 are considered "on boundary"
+// Check if a position is on the terrain boundary (restricted edges)
+// With TERRAIN_MIN_GRID = 1 and TERRAIN_MAX_GRID = 20, positions 1 and 20 are on the boundary
 const isOnTerrainBoundary = (position) => {
   return position.x === TERRAIN_MIN_GRID || 
-         position.x === TERRAIN_MIN_GRID + 1 ||
-         position.x === TERRAIN_MAX_GRID - 1 ||
          position.x === TERRAIN_MAX_GRID || 
          position.z === TERRAIN_MIN_GRID || 
-         position.z === TERRAIN_MIN_GRID + 1 ||
-         position.z === TERRAIN_MAX_GRID - 1 ||
          position.z === TERRAIN_MAX_GRID;
 };
 
@@ -164,16 +162,7 @@ const BlockGrid = () => {
   
   const { camera, raycaster } = useThree();
   
-  // Load brick texture for walls
-  const brickTex = useLoader(THREE.TextureLoader, brickTexture);
-  
-  // Configure brick texture
-  useMemo(() => {
-    if (brickTex) {
-      brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
-      brickTex.repeat.set(4, 2); // Adjust repetition for good brick appearance
-    }
-  }, [brickTex]);
+  // Brick texture removed - walls replaced with white division lines
   
   // Convert world position to grid position (discrete/snap to grid)
   const worldToGrid = useMemo(() => {
@@ -210,6 +199,13 @@ const BlockGrid = () => {
       gridPosition.y = 0;
     }
     
+    // Validate position is within terrain bounds (one block inward from edges)
+    if (gridPosition.x < TERRAIN_MIN_GRID || gridPosition.x > TERRAIN_MAX_GRID ||
+        gridPosition.z < TERRAIN_MIN_GRID || gridPosition.z > TERRAIN_MAX_GRID) {
+      setPreviewPosition(null);
+      return;
+    }
+    
     setPreviewPosition(gridPosition);
   };
 
@@ -235,6 +231,12 @@ const BlockGrid = () => {
     // Ensure we're above ground
     if (gridPosition.y < 0) {
       gridPosition.y = 0;
+    }
+
+    // Validate position is within terrain bounds (one block inward from edges)
+    if (gridPosition.x < TERRAIN_MIN_GRID || gridPosition.x > TERRAIN_MAX_GRID ||
+        gridPosition.z < TERRAIN_MIN_GRID || gridPosition.z > TERRAIN_MAX_GRID) {
+      return; // Block placement outside valid area
     }
 
     // Check if pool/water is being placed on boundary
@@ -308,16 +310,31 @@ const BlockGrid = () => {
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Grid visual helper (invisible in production) */}
-      <GridHelper />
+      {/* Grid visual helper - HIDDEN */}
+      {/* <GridHelper /> */}
       
-        {/* Grass ground with animated grass blades */}
-        <GrassGround
+      {/* Country grid with plots and white division lines */}
+      <CountryGrid gridSize={GRID_SIZE} plotsAround={1} />
+      
+      {/* Corner lights - always present at the 4 corners of the central terrain */}
+      <CornerLights gridSize={GRID_SIZE} />
+      
+      {/* House - always present in the scene */}
+      <House gridSize={GRID_SIZE} position={{ x: -10, z: -10 }} />
+      
+      {/* Trees on the left side of the house */}
+      <LeftSideTrees gridSize={GRID_SIZE} housePosition={{ x: -10, z: -10 }} />
+      
+      {/* Second group of trees */}
+      <SecondTreeGroup gridSize={GRID_SIZE} />
+      
+        {/* Grass ground - HIDDEN (no longer needed) */}
+        {/* <GrassGround
           size={GRID_SIZE}
           grassCount={90000}
           position={[(GRID_SIZE / 2) + 0.5, -0.5, (GRID_SIZE / 2) + 0.5]}
           allBlocks={blocks}
-        />
+        /> */}
 
       
       {/* Interactive plane for mouse/touch input */}
@@ -328,46 +345,10 @@ const BlockGrid = () => {
         />
       </group>
 
-      {/* Walls around the grid - using thin boxes for better visibility */}
+      {/* Walls removed - replaced with white division lines in CountryGrid */}
 
-      <Box
-        args={[0.1, 3, GRID_SIZE]}
-        position={[0.5, 1, (GRID_SIZE / 2) + 0.5]}
-        receiveShadow
-        castShadow
-      >
-        <meshStandardMaterial map={brickTex} />
-      </Box>
-
-      <Box
-        args={[0.1, 3, GRID_SIZE]}
-        position={[ (GRID_SIZE ) + 0.5, 1, (GRID_SIZE / 2) + 0.5]}
-        receiveShadow
-        castShadow
-      >
-        <meshStandardMaterial map={brickTex} />
-      </Box>
-
-      <Box
-        args={[GRID_SIZE, 3, 0.1]}
-        position={[ (GRID_SIZE / 2) + 0.5, 1, 0.5]}
-        receiveShadow
-        castShadow
-      >
-        <meshStandardMaterial map={brickTex} />
-      </Box>
-
-      <Box
-        args={[GRID_SIZE, 3, 0.1]}
-        position={[ (GRID_SIZE / 2) + 0.5, 1, (GRID_SIZE ) + 0.5]}
-        receiveShadow
-        castShadow
-      >
-        <meshStandardMaterial map={brickTex} />
-      </Box>
-
-      {/* Background trees/plants around the perimeter */}
-      <BackgroundTrees gridSize={GRID_SIZE} />
+      {/* Background trees/plants around the perimeter - REMOVED */}
+      {/* <BackgroundTrees gridSize={GRID_SIZE} /> */}
       
         {/* Grid lines for visual reference (subtle) */}
         { /* 

@@ -49,7 +49,7 @@ const Fence = ({
   const railHeight = 0.06;      // Thickness of horizontal rails
   const railDepth = 0.06;       // Depth of horizontal rails
   const postSpacing = 0.5;      // Distance between posts
-  const groundLevel = bounds.y; // Base at block level
+  const groundLevel = -0.5;     // Ground level (same as terrain)
 
   // Material for wooden fence
   const woodMaterial = useMemo(() => {

@@ -101,7 +101,7 @@ export const OBJECT_TYPES = {
 export const CAMERA_VIEWS = {
   CENTER: {
     name: 'center',
-    position: { x: 22.44, y: 6.49, z: 11.62 },
+    position: { x: 30, y: 10, z: 18 }, // More zoomed out - increased distance
     target: { x: 3.56, y: -2.45, z: 11.07 }
   },
   LEFT: {
@@ -128,12 +128,12 @@ const initialState = {
   toolActive: true, // Tool is active by default
   invalidPlacementReason: null, // Reason why current position is invalid
   fogSettings: {
-    enabled: true,
-    color: '#ffffff', // White fog color
-    density: 0.02,
+    enabled: true, // Enabled to create atmospheric depth and hide horizon seam
+    color: '#E8E8E8', // Light grey/white for natural mist effect
+    density: 0.012, // Subtle density for smooth horizon transition
     near: 20,
     far: 80,
-    affectSkybox: true // Always affect the skybox
+    affectSkybox: false // Keep skybox clear for better sky visibility
   },
   cameraData: {
     position: CAMERA_VIEWS.CENTER.position, // Initial camera position
@@ -153,10 +153,10 @@ const initialState = {
 
 // Grid configuration - must match BlockGrid.jsx
 const GRID_SIZE = 20;
-// Walls are at 0.5 and 20.5, but grid positions are integers (0, 1, 2... 20, 21)
-// So positions 0, 1, 20, and 21 are "on the boundary" (next to walls)
-const TERRAIN_MIN_GRID = 0;  // First grid position (next to wall at 0.5)
-const TERRAIN_MAX_GRID = GRID_SIZE + 1; // Last grid position (next to wall at 20.5)
+// Valid positions are from 1 to GRID_SIZE (one block inward from edges)
+// Positions 0, 1, GRID_SIZE, and GRID_SIZE+1 are "on the boundary" (restricted)
+const TERRAIN_MIN_GRID = 1;  // First valid grid position (one block inward)
+const TERRAIN_MAX_GRID = GRID_SIZE; // Last valid grid position (one block inward)
 
 // Utility functions for grid operations
 const vectorsEqual = (v1, v2) => {
@@ -170,17 +170,12 @@ const isPositionOccupied = (position, blocks) => {
   );
 };
 
-// Check if a position is on the terrain boundary (where walls are)
-// Since walls are at 0.5 and 20.5, and grid positions are integers,
-// positions 0, 1, 20, and 21 are considered "on boundary"
+// Check if a position is on the terrain boundary (restricted edges)
+// With TERRAIN_MIN_GRID = 1 and TERRAIN_MAX_GRID = 20, positions 1 and 20 are on the boundary
 const isOnTerrainBoundary = (position) => {
   return position.x === TERRAIN_MIN_GRID || 
-         position.x === TERRAIN_MIN_GRID + 1 ||
-         position.x === TERRAIN_MAX_GRID - 1 ||
          position.x === TERRAIN_MAX_GRID || 
          position.z === TERRAIN_MIN_GRID || 
-         position.z === TERRAIN_MIN_GRID + 1 ||
-         position.z === TERRAIN_MAX_GRID - 1 ||
          position.z === TERRAIN_MAX_GRID;
 };
 

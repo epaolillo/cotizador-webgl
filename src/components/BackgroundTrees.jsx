@@ -8,7 +8,7 @@ import * as THREE from 'three';
  */
 const BackgroundTrees = ({ gridSize = 20 }) => {
   // Load the GLB model
-  const modelPath = `${import.meta.env.BASE_URL}glb/tree2.glb`;
+  const modelPath = `${import.meta.env.BASE_URL}glb/realistic_europan_tree.glb`;
   const { scene } = useGLTF(modelPath);
   
   if (!scene) {
@@ -116,7 +116,7 @@ const BackgroundTrees = ({ gridSize = 20 }) => {
 };
 
 // Preload the model
-useGLTF.preload(`${import.meta.env.BASE_URL}glb/tree2.glb`);
+useGLTF.preload(`${import.meta.env.BASE_URL}glb/realistic_europan_tree.glb`);
 
 export default BackgroundTrees;
 

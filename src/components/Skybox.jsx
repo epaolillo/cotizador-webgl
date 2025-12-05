@@ -14,7 +14,8 @@ const Skybox = () => {
     if (!cloudTex) return null;
     
     // Configure texture properties for skybox
-    cloudTex.wrapS = cloudTex.wrapT = THREE.RepeatWrapping;
+    // Usar ClampToEdgeWrapping para evitar la línea de costura visible
+    cloudTex.wrapS = cloudTex.wrapT = THREE.ClampToEdgeWrapping;
     cloudTex.repeat.set(1, 1); // No repeat for skybox
     cloudTex.anisotropy = 32; // Better texture quality
     
@@ -43,7 +44,11 @@ const Skybox = () => {
   }
 
   return (
-    <mesh geometry={skyboxGeometry} material={skyboxMaterial} />
+    <mesh 
+      geometry={skyboxGeometry} 
+      material={skyboxMaterial}
+      rotation={[0, Math.PI / 2, 0]} // Rotate skybox 90 degrees to hide the seam better
+    />
   );
 };
 

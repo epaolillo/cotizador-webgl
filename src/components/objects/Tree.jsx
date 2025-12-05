@@ -8,7 +8,7 @@ import * as THREE from 'three';
  */
 const Tree = ({ block, opacity = 1.0, selected = false }) => {
   // Load the GLB model with base URL for GitHub Pages compatibility
-  const modelPath = `${import.meta.env.BASE_URL}glb/tree2.glb`;
+  const modelPath = `${import.meta.env.BASE_URL}glb/realistic_europan_tree.glb`;
   const { scene } = useGLTF(modelPath);
   
   if (!scene) {
@@ -112,6 +112,6 @@ const Tree = ({ block, opacity = 1.0, selected = false }) => {
 };
 
 // Preload the model for better performance
-useGLTF.preload(`${import.meta.env.BASE_URL}glb/tree2.glb`);
+useGLTF.preload(`${import.meta.env.BASE_URL}glb/realistic_europan_tree.glb`);
 
 export default Tree;

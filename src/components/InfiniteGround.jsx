@@ -1,23 +1,23 @@
 import React, { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import grassTexture from '../assets/grass_seamless_texture_1418.jpg';
+import pasto1Texture from '../assets/pasto1.jpg';
 
 const InfiniteGround = () => {
-  // Load the grass texture
-  const grassTex = useLoader(THREE.TextureLoader, grassTexture);
+  // Load the pasto1 texture
+  const pasto1Tex = useLoader(THREE.TextureLoader, pasto1Texture);
   
-  // Configure grass texture
+  // Configure pasto1 texture
   const groundTexture = useMemo(() => {
-    if (!grassTex) return null;
+    if (!pasto1Tex) return null;
     
     // Configure texture properties for seamless tiling
-    grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-    grassTex.repeat.set(400, 400); // Much smaller repeat for realistic grass scale
-    grassTex.anisotropy = 16; // Better texture quality
+    pasto1Tex.wrapS = pasto1Tex.wrapT = THREE.RepeatWrapping;
+    pasto1Tex.repeat.set(400, 400); // Much smaller repeat for realistic grass scale
+    pasto1Tex.anisotropy = 16; // Better texture quality
     
-    return grassTex;
-  }, [grassTex]);
+    return pasto1Tex;
+  }, [pasto1Tex]);
 
   // Create ground geometry - very large plane
   const groundGeometry = useMemo(() => {

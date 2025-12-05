@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useEditor } from '../context/EditorContext';
@@ -69,11 +69,44 @@ const Lighting = () => {
   );
 };
 
+// Component to restrict camera pan to stay near the editable lot
+const CameraPanRestrictor = ({ gridSize = 20 }) => {
+  const { controls } = useThree();
+  const lotCenter = React.useRef(new THREE.Vector3(
+    gridSize / 2 + 0.5, 
+    -0.5, 
+    gridSize / 2 + 0.5
+  ));
+  const maxPanDistance = gridSize * 0.3; // Allow panning up to 30% of grid size from center
+  
+  useFrame(() => {
+    if (!controls || !controls.target) return;
+    
+    const target = controls.target;
+    const dx = target.x - lotCenter.current.x;
+    const dz = target.z - lotCenter.current.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    
+    if (distance > maxPanDistance) {
+      // Clamp target to max distance from lot center
+      const angle = Math.atan2(dz, dx);
+      target.x = lotCenter.current.x + Math.cos(angle) * maxPanDistance;
+      target.z = lotCenter.current.z + Math.sin(angle) * maxPanDistance;
+      // Keep Y at ground level
+      target.y = lotCenter.current.y;
+      controls.update();
+    }
+  });
+  
+  return null;
+};
+
 // Scene content component
 const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERACTION_MODES }) => {
   // Initial camera configuration from context
   const initialCameraPosition = [cameraData.position.x, cameraData.position.y, cameraData.position.z];
   const initialCameraTarget = [cameraData.target.x, cameraData.target.y, cameraData.target.z];
+  const GRID_SIZE = 20; // Match BlockGrid.jsx
 
   return (
     <>
@@ -92,14 +125,18 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
         enableZoom={true} // Zoom enabled with mouse wheel
         enableRotate={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
         minDistance={5}
-        maxDistance={150}
-        minPolarAngle={0}
+        maxDistance={25} // Limited to prevent excessive zoom out
+        minPolarAngle={Math.PI * 0.15} // Prevent rotating too far up
+        maxPolarAngle={Math.PI * 0.4} // Prevent rotating too far down (can't see under the ground)
         target={initialCameraTarget}
         panSpeed={1.5}
         rotateSpeed={1.5}
         zoomSpeed={1.5} // Zoom speed with mouse wheel
         makeDefault
       />
+      
+      {/* Restrict camera pan to stay near the editable lot */}
+      <CameraPanRestrictor gridSize={GRID_SIZE} />
 
       {/* Atmospheric Fog System */}
       <AtmosphericFog />
@@ -110,8 +147,8 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
       {/* Skybox for infinite sky */}
       <Skybox />
 
-      {/* Infinite ground */}
-      <InfiniteGround />
+      {/* Infinite ground - HIDDEN to see division lines */}
+      {/* <InfiniteGround /> */}
 
       {/* Block grid (handles interaction) */}
       <BlockGrid />
