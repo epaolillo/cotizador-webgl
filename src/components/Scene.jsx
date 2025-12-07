@@ -125,7 +125,7 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
         enableZoom={true} // Zoom enabled with mouse wheel
         enableRotate={!cameraView.isAnimating && interactionMode === INTERACTION_MODES.NONE}
         minDistance={5}
-        maxDistance={25} // Limited to prevent excessive zoom out
+        maxDistance={35} // Increased from 25 to allow more zoom out
         minPolarAngle={Math.PI * 0.15} // Prevent rotating too far up
         maxPolarAngle={Math.PI * 0.4} // Prevent rotating too far down (can't see under the ground)
         target={initialCameraTarget}
@@ -147,8 +147,8 @@ const SceneContent = ({ blocks, cameraData, cameraView, interactionMode, INTERAC
       {/* Skybox for infinite sky */}
       <Skybox />
 
-      {/* Infinite ground - HIDDEN to see division lines */}
-      {/* <InfiniteGround /> */}
+      {/* Infinite ground - Shows country pattern with streets and lots */}
+      <InfiniteGround />
 
       {/* Block grid (handles interaction) */}
       <BlockGrid />

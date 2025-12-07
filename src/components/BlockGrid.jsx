@@ -9,6 +9,7 @@ import CornerLights from './CornerLights';
 import House from './House';
 import LeftSideTrees from './LeftSideTrees';
 import SecondTreeGroup from './SecondTreeGroup';
+import Roundabout from './Roundabout';
 
 // Grid configuration
 const GRID_SIZE = 20; // Grid extends from -GRID_SIZE to +GRID_SIZE
@@ -315,6 +316,9 @@ const BlockGrid = () => {
       
       {/* Country grid with plots and white division lines */}
       <CountryGrid gridSize={GRID_SIZE} plotsAround={1} />
+      
+      {/* Circular road (rotonda) around editable area */}
+      <Roundabout gridSize={GRID_SIZE} roadWidth={5} />
       
       {/* Corner lights - always present at the 4 corners of the central terrain */}
       <CornerLights gridSize={GRID_SIZE} />
