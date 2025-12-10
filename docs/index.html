@@ -2,24 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>WebGL 3D Block Editor</title>
     <style>
-      body {
+      * {
+        box-sizing: border-box;
+      }
+      
+      html, body {
         margin: 0;
         padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+      
+      body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
           'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
           sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        overflow: hidden;
         background: #1a1a1a;
+        /* Prevent pull-to-refresh on mobile */
+        overscroll-behavior: none;
+        /* Prevent text selection on mobile */
+        -webkit-user-select: none;
+        user-select: none;
+        /* Use safe area insets for notched devices */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       }
       
       #root {
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* Use dvh (dynamic viewport height) for better mobile support */
+        min-height: 100vh;
+        min-height: 100dvh;
       }
       
       canvas {
@@ -27,7 +56,7 @@
         touch-action: none;
       }
     </style>
-    <script type="module" crossorigin src="/cotizador-webgl/assets/index-RKhJ-Msz.js"></script>
+    <script type="module" crossorigin src="/cotizador-webgl/assets/index-B-eGG8B9.js"></script>
   </head>
   <body>
     <div id="root"></div>
